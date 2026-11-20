@@ -956,7 +956,7 @@
   .task-swipe-actions {
     position: absolute;
     inset: 0;
-    z-index: 0;
+    z-index: 3;
     display: flex;
     align-items: stretch;
     justify-content: space-between;
@@ -967,7 +967,12 @@
 
   .task-swipe-wrapper.swiping .task-swipe-actions {
     opacity: 1;
-    pointer-events: auto;
+    pointer-events: none;
+  }
+
+  .task-swipe-wrapper.swiping .task-card-surface .task-row-actions {
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .swipe-left-bg {
@@ -987,7 +992,7 @@
     width: 148px;
     position: relative;
     z-index: 4;
-    pointer-events: auto;
+    pointer-events: none;
   }
 
   .swipe-act-btn {
