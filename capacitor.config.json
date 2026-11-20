@@ -1,0 +1,8 @@
+{
+  "appId": "com.dailyflow.app",
+  "appName": "Daily Flow",
+  "webDir": "app/src/main/assets/www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

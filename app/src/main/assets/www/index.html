@@ -1,0 +1,4119 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Daily Flow — iOS 27.3 Liquid Glass</title>
+<style>
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --bg-canvas: #F5F5F7;
+    --bg-gradient-1: rgba(0, 122, 255, 0.08);
+    --bg-gradient-2: rgba(52, 199, 89, 0.07);
+    --bg-gradient-3: rgba(255, 159, 10, 0.06);
+    --glass-bg: rgba(255, 255, 255, 0.78);
+    --glass-bg-elevated: rgba(255, 255, 255, 0.90);
+    --glass-inset: rgba(118, 118, 128, 0.08);
+    --task-card-solid: #FFFFFF;
+    --glass-border: rgba(255, 255, 255, 0.85);
+    --glass-hairline: rgba(0, 0, 0, 0.06);
+    --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --text-primary: #1D1D1F;
+    --text-secondary: #6E6E73;
+    --text-tertiary: #8E8E93;
+    --accent-blue: #007AFF;
+    --accent-green: #34C759;
+    --accent-amber: #FF9F0A;
+    --accent-purple: #AF52DE;
+    --accent-red: #FF3B30;
+    --pill-active-bg: #FFFFFF;
+    --ring-track: rgba(120, 120, 128, 0.14);
+    --blank-cell: rgba(120, 120, 128, 0.08);
+    --blank-cell-border: rgba(120, 120, 128, 0.14);
+    --sheet-backdrop: rgba(15, 15, 20, 0.36);
+    --clock-wheel-mask: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 34%, rgba(255,255,255,0) 66%, rgba(255,255,255,0.92) 100%);
+  }
+
+  html[data-theme="dark"] {
+    --bg-canvas: #0A0A0C;
+    --bg-gradient-1: rgba(10, 132, 255, 0.14);
+    --bg-gradient-2: rgba(48, 209, 88, 0.10);
+    --bg-gradient-3: rgba(255, 159, 10, 0.09);
+    --glass-bg: rgba(28, 28, 32, 0.78);
+    --glass-bg-elevated: rgba(38, 38, 44, 0.92);
+    --glass-inset: rgba(255, 255, 255, 0.07);
+    --task-card-solid: #1C1C20;
+    --glass-border: rgba(255, 255, 255, 0.14);
+    --glass-hairline: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 12px 34px rgba(0, 0, 0, 0.42), 0 1px 2px rgba(0, 0, 0, 0.30);
+    --text-primary: #F5F5F7;
+    --text-secondary: #A1A1A6;
+    --text-tertiary: #6E6E73;
+    --accent-blue: #0A84FF;
+    --accent-green: #30D158;
+    --accent-amber: #FF9F0A;
+    --accent-purple: #BF5AF2;
+    --accent-red: #FF453A;
+    --pill-active-bg: rgba(58, 58, 66, 0.95);
+    --ring-track: rgba(255, 255, 255, 0.10);
+    --blank-cell: rgba(255, 255, 255, 0.06);
+    --blank-cell-border: rgba(255, 255, 255, 0.10);
+    --sheet-backdrop: rgba(0, 0, 0, 0.62);
+    --clock-wheel-mask: linear-gradient(180deg, rgba(34,34,40,0.95) 0%, rgba(34,34,40,0) 34%, rgba(34,34,40,0) 66%, rgba(34,34,40,0.95) 100%);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+  }
+
+  body {
+    background: #111114;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: var(--text-primary);
+  }
+
+  /* Device Chassis (Desktop) & Edge-to-Edge (Mobile / Android APK) */
+  .device-frame {
+    position: relative;
+    width: 393px;
+    height: 852px;
+    border-radius: 54px;
+    background: var(--bg-canvas);
+    box-shadow:
+      0 0 0 11px #232327,
+      0 0 0 13px #3A3A40,
+      0 32px 80px rgba(0, 0, 0, 0.65);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.25s ease;
+  }
+
+  @media (max-width: 520px) {
+    body {
+      background: var(--bg-canvas);
+    }
+    .device-frame {
+      width: 100vw;
+      height: 100dvh;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .status-bar-desktop {
+      display: none !important;
+    }
+    .app-header {
+      padding-top: calc(var(--safe-top) + 10px) !important;
+    }
+  }
+
+  /* Ambient Mesh Aura */
+  .ambient-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 15% 12%, var(--bg-gradient-1), transparent 46%),
+      radial-gradient(circle at 86% 24%, var(--bg-gradient-2), transparent 44%),
+      radial-gradient(circle at 50% 85%, var(--bg-gradient-3), transparent 50%);
+    z-index: 0;
+  }
+
+  /* Status Bar & Dynamic Island (Desktop Frame) */
+  .status-bar-desktop {
+    position: relative;
+    z-index: 40;
+    height: 50px;
+    padding: 14px 26px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+  }
+
+  .dynamic-island {
+    position: absolute;
+    left: 50%;
+    top: 11px;
+    transform: translateX(-50%);
+    min-width: 120px;
+    height: 34px;
+    padding: 0 14px;
+    background: #000000;
+    color: #FFFFFF;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.28);
+    transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 60;
+    white-space: nowrap;
+  }
+
+  .dynamic-island.expanded {
+    min-width: 248px;
+    height: 38px;
+    padding: 0 16px;
+    background: #0D0D10;
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+
+  .island-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    flex-shrink: 0;
+  }
+
+  .island-undo-btn {
+    background: rgba(255, 255, 255, 0.16);
+    border: none;
+    color: #FFD60A;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    cursor: pointer;
+    margin-left: 4px;
+  }
+
+  /* Mobile Floating Toast for Android APK */
+  .mobile-toast {
+    display: none;
+  }
+  @media (max-width: 520px) {
+    .mobile-toast {
+      position: fixed;
+      top: calc(var(--safe-top) + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: #141418;
+      color: #FFF;
+      padding: 9px 16px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 120;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.3);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .mobile-toast.visible {
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  /* On-Screen Push Notification Banner */
+  .push-banner {
+    position: absolute;
+    top: calc(var(--safe-top) + 10px);
+    left: 12px;
+    right: 12px;
+    z-index: 150;
+    background: var(--glass-bg-elevated);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+    border-radius: 24px;
+    padding: 13px 14px;
+    transform: translateY(-150%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease;
+  }
+
+  .push-banner.show {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .push-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .push-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #007AFF, #34C759);
+    color: #FFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .push-meta {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .push-app-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+  }
+
+  .push-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .push-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .push-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .push-btn {
+    flex: 1;
+    border: none;
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .push-btn.primary {
+    background: var(--accent-blue);
+    color: #FFF;
+  }
+
+  .push-btn.secondary {
+    background: var(--glass-inset);
+    color: var(--text-primary);
+  }
+
+  /* Top Utility Header */
+  .app-header {
+    position: relative;
+    z-index: 20;
+    padding: 6px 18px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .date-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .date-pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .icon-pill-btn {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+
+  .icon-pill-btn:active {
+    transform: scale(0.94);
+  }
+
+  .notif-badge {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--accent-red);
+    color: #FFF;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .reset-pill-btn {
+    height: 32px;
+    padding: 0 11px;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+
+  .reset-pill-btn.confirming {
+    background: var(--accent-red);
+    color: #FFF;
+    border-color: var(--accent-red);
+  }
+
+  /* Main Scrollable Viewport */
+  .main-scroll {
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2px 18px 144px;
+    scrollbar-width: none;
+  }
+  .main-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-view {
+    display: none;
+  }
+  .tab-view.active {
+    display: block;
+  }
+
+  /* Liquid Glass Card Primitive */
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 24px;
+  }
+
+  /* Editorial Greeting & Week Strip */
+  .greeting-block {
+    margin-bottom: 12px;
+  }
+
+  .greeting-title {
+    font-size: 27px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+
+  .greeting-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .week-ribbon {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    padding: 6px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+
+  .day-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 0;
+    border-radius: 14px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+  }
+
+  .day-cell.selected {
+    background: var(--pill-active-bg);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    color: var(--text-primary);
+  }
+
+  .day-letter {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .day-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+
+  .day-cell.selected .day-num {
+    background: var(--accent-blue);
+    color: #FFF;
+  }
+
+  /* Focus Spotlight Smart Stack */
+  .spotlight-card {
+    padding: 15px 16px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .spotlight-card.peak {
+    background: linear-gradient(135deg, var(--glass-bg), rgba(52, 199, 89, 0.12));
+  }
+
+  .spotlight-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .spotlight-kicker {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-blue);
+  }
+
+  .spotlight-card.peak .spotlight-kicker {
+    color: var(--accent-green);
+  }
+
+  .stack-pager {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .pager-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-hairline);
+    background: var(--glass-inset);
+    color: var(--text-primary);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .spotlight-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin-bottom: 10px;
+  }
+
+  .spotlight-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .reminder-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(0, 122, 255, 0.10);
+    color: var(--accent-blue);
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  .reminder-chip.due {
+    background: rgba(255, 59, 48, 0.12);
+    color: var(--accent-red);
+  }
+
+  .spotlight-cta {
+    border: none;
+    border-radius: 999px;
+    padding: 7px 14px;
+    background: var(--accent-blue);
+    color: #FFF;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .spotlight-cta.green {
+    background: var(--accent-green);
+  }
+
+  /* Asymmetric Bento Grid */
+  .bento-grid {
+    display: grid;
+    grid-template-columns: 1.04fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .bento-left {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  .bento-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .bento-chev {
+    color: var(--text-tertiary);
+    font-size: 13px;
+  }
+
+  .pulse-ring-wrap {
+    position: relative;
+    width: 112px;
+    height: 112px;
+    margin: 8px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pulse-center-text {
+    position: absolute;
+    text-align: center;
+  }
+
+  .pulse-pct {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .pulse-lbl {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+  }
+
+  .pulse-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+  }
+
+  .pulse-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-secondary);
+  }
+
+  .pulse-dot-lbl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dot-ind {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .bento-right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bento-mini {
+    padding: 12px 13px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .quick-jot-preview {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 6px 0 8px;
+  }
+
+  .quick-jot-form {
+    display: flex;
+    align-items: center;
+    background: var(--glass-inset);
+    border-radius: 999px;
+    padding: 3px 4px 3px 10px;
+  }
+
+  .quick-jot-input {
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 11.5px;
+    width: 100%;
+    outline: none;
+  }
+
+  .quick-jot-send {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent-amber);
+    color: #FFF;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .streak-badge {
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(52, 199, 89, 0.14);
+    color: var(--accent-green);
+    font-size: 10.5px;
+    font-weight: 700;
+  }
+
+  .alerts-count-text {
+    font-size: 13.5px;
+    font-weight: 700;
+    margin: 6px 0 8px;
+  }
+
+  .test-alert-btn {
+    width: 100%;
+    border: 1px solid var(--glass-hairline);
+    background: var(--pill-active-bg);
+    color: var(--text-primary);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* Section Header */
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 9px;
+  }
+
+  .section-title {
+    font-size: 15.5px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  .section-link {
+    border: none;
+    background: transparent;
+    color: var(--accent-blue);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .section-hint {
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+  }
+
+  /* 2-Column Daily Rituals Matrix (Today Screen) */
+  .ritual-matrix {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    margin-bottom: 18px;
+  }
+
+  .ritual-tile {
+    position: relative;
+    overflow: hidden;
+    padding: 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s ease;
+  }
+
+  .ritual-tile:active {
+    transform: scale(0.97);
+  }
+
+  .ritual-tile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .ritual-icon-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ritual-fraction {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .ritual-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ritual-bottom-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3.5px;
+    background: var(--glass-inset);
+  }
+
+  .ritual-bottom-fill {
+    height: 100%;
+    transition: width 0.25s ease;
+  }
+
+  /* Segmented Control */
+  .segmented-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 3px;
+    border-radius: 14px;
+    background: var(--glass-inset);
+    margin-bottom: 11px;
+  }
+
+  .segmented-bar.three {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .seg-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 4px;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .seg-btn.active {
+    background: var(--pill-active-bg);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  }
+
+  /* Inline Task Search */
+  .search-drawer {
+    display: none;
+    margin-bottom: 10px;
+  }
+  .search-drawer.open {
+    display: block;
+  }
+  .search-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 16px;
+  }
+  .search-input-wrap input {
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13.5px;
+    width: 100%;
+    outline: none;
+  }
+
+  /* Zero-Bleed Swipeable Task Cards */
+  .task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .task-swipe-wrapper {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--task-card-solid);
+    box-shadow: var(--glass-shadow);
+    border: 1px solid var(--glass-hairline);
+  }
+
+  .task-swipe-actions {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  .task-swipe-wrapper.swiping .task-swipe-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .swipe-left-bg {
+    flex: 1;
+    background: var(--accent-green);
+    color: #FFF;
+    display: flex;
+    align-items: center;
+    padding-left: 18px;
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+
+  .swipe-right-btns {
+    display: flex;
+  }
+
+  .swipe-act-btn {
+    border: none;
+    color: #FFF;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 0 14px;
+    cursor: pointer;
+  }
+
+  .swipe-act-btn.remind {
+    background: var(--accent-blue);
+  }
+
+  .swipe-act-btn.delete {
+    background: var(--accent-red);
+  }
+
+  .task-card-surface {
+    position: relative;
+    z-index: 2;
+    background: var(--task-card-solid);
+    padding: 13px 14px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .task-check-ring {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-blue);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    color: #FFF;
+  }
+
+  .task-check-ring.done {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+  }
+
+  .task-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .task-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .task-title.done {
+    text-decoration: line-through;
+    color: var(--text-tertiary);
+  }
+
+  .task-meta-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .cat-pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .prio-pill {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(255, 59, 48, 0.12);
+    color: var(--accent-red);
+  }
+
+  .task-time-pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(0, 122, 255, 0.10);
+    color: var(--accent-blue);
+    cursor: pointer;
+  }
+
+  .task-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .row-mini-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .row-mini-btn:active {
+    background: var(--glass-inset);
+  }
+
+  .empty-state-box {
+    padding: 24px 16px;
+    text-align: center;
+  }
+
+  .empty-state-text {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  /* Bottom Floating Action Capsules (Today Screen) */
+  .floating-action-bar {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: calc(var(--safe-bottom) + 84px);
+    z-index: 30;
+    display: flex;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  .floating-action-bar.hidden {
+    display: none;
+  }
+
+  .fab-search {
+    pointer-events: auto;
+    height: 46px;
+    padding: 0 18px;
+    border-radius: 999px;
+    background: var(--glass-bg-elevated);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.10);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+  }
+
+  .fab-new-task {
+    pointer-events: auto;
+    flex: 1;
+    height: 46px;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(135deg, #007AFF, #0062CC);
+    box-shadow: 0 12px 28px rgba(0, 122, 255, 0.34);
+    color: #FFF;
+    font-size: 14.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+  }
+
+  /* Floating 4-Tab Liquid Glass Dock */
+  .bottom-dock {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: calc(var(--safe-bottom) + 14px);
+    z-index: 35;
+    height: 62px;
+    padding: 5px;
+    border-radius: 31px;
+    background: var(--glass-bg-elevated);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.12);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .dock-btn {
+    border: none;
+    background: transparent;
+    border-radius: 26px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--text-secondary);
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .dock-btn.active {
+    background: var(--pill-active-bg);
+    color: var(--accent-blue);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  }
+
+  /* HABITS SCREEN */
+  .view-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .view-title {
+    font-size: 27px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  .view-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .primary-pill-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 15px;
+    background: var(--accent-blue);
+    color: #FFF;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 122, 255, 0.28);
+  }
+
+  .habits-hero {
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .habits-hero-top {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .rhythm-bars {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    align-items: end;
+    height: 68px;
+  }
+
+  .rhythm-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .rhythm-bar-track {
+    width: 100%;
+    max-width: 16px;
+    height: 46px;
+    border-radius: 8px;
+    background: var(--blank-cell);
+    border: 1px solid var(--blank-cell-border);
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+  }
+
+  .rhythm-bar-fill {
+    width: 100%;
+    background: var(--accent-green);
+    border-radius: 6px;
+    transition: height 0.3s ease;
+  }
+
+  .rhythm-day-lbl {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+  }
+
+  .habits-hero-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .hero-stat-pill {
+    padding: 8px 12px;
+    border-radius: 14px;
+    background: var(--glass-inset);
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .habit-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .habit-card {
+    position: relative;
+    overflow: hidden;
+    padding: 15px;
+  }
+
+  .habit-liquid-wash {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    opacity: 0.08;
+    pointer-events: none;
+    transition: width 0.3s ease;
+  }
+
+  .habit-card-top {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .habit-squircle {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .habit-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .habit-title-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .habit-name {
+    font-size: 15.5px;
+    font-weight: 700;
+  }
+
+  .habit-streak-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(255, 159, 10, 0.14);
+    color: var(--accent-amber);
+  }
+
+  .habit-sub {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .habit-card-bottom {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 13px;
+    padding-top: 11px;
+    border-top: 1px solid var(--glass-hairline);
+  }
+
+  .habit-dots-row {
+    display: flex;
+    gap: 5px;
+  }
+
+  .habit-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--blank-cell);
+    border: 1px solid var(--blank-cell-border);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .habit-dot-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--accent-green);
+  }
+
+  .stepper-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 6px;
+    border-radius: 999px;
+    background: var(--glass-inset);
+  }
+
+  .step-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: var(--pill-active-bg);
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+
+  .step-val {
+    font-size: 12.5px;
+    font-weight: 700;
+    min-width: 34px;
+    text-align: center;
+  }
+
+  .completed-pill {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(52, 199, 89, 0.16);
+    color: var(--accent-green);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* NOTES SCREEN */
+  .notes-tag-row {
+    display: flex;
+    gap: 7px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tag-chip {
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--text-secondary);
+    padding: 6px 13px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .tag-chip.active {
+    background: var(--accent-blue);
+    color: #FFF;
+    border-color: var(--accent-blue);
+  }
+
+  .note-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 66px;
+  }
+
+  .note-card {
+    padding: 14px 15px;
+  }
+
+  .note-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 7px;
+  }
+
+  .note-tag-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(255, 159, 10, 0.14);
+    color: var(--accent-amber);
+  }
+
+  .note-body {
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .note-time {
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+
+  .note-composer-bar {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: calc(var(--safe-bottom) + 84px);
+    z-index: 30;
+    padding: 6px 7px 6px 14px;
+    border-radius: 999px;
+    background: var(--glass-bg-elevated);
+    backdrop-filter: blur(26px) saturate(185%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .note-composer-bar.visible {
+    display: flex;
+  }
+
+  .note-composer-bar input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13.5px;
+    outline: none;
+  }
+
+  .note-send-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent-amber);
+    color: #FFF;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* PROGRESS SCREEN */
+  .analytics-card {
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .analytics-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .analytics-title {
+    font-size: 14.5px;
+    font-weight: 700;
+  }
+
+  .analytics-badge {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--accent-blue);
+  }
+
+  .analytics-badge.green {
+    color: var(--accent-green);
+  }
+
+  .flow-bars-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    align-items: end;
+    height: 112px;
+    padding: 0 6px;
+  }
+
+  .flow-bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .flow-bar-pill {
+    width: 18px;
+    border-radius: 9px;
+    background: var(--blank-cell);
+    border: 1px solid var(--blank-cell-border);
+    transition: height 0.3s ease, background 0.3s ease;
+  }
+
+  .flow-bar-pill.today {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+  }
+
+  .flow-bar-lbl {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+  }
+
+  /* 28-Day Plain/Blank -> Half/Full Green Heatmap */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 7px;
+  }
+
+  .heat-cell {
+    aspect-ratio: 1;
+    border-radius: 11px;
+    background: var(--blank-cell);
+    border: 1px solid var(--blank-cell-border);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .heat-cell.today-cell {
+    border: 1.5px solid var(--accent-green);
+  }
+
+  .heat-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--accent-green);
+    transition: height 0.3s ease;
+  }
+
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--glass-hairline);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .legend-items {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    background: var(--blank-cell);
+    border: 1px solid var(--blank-cell-border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .legend-swatch.half::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 50%;
+    background: var(--accent-green);
+  }
+
+  .legend-swatch.full {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+  }
+
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .donut-legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .donut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Bottom Sheets & Overlays */
+  .sheet-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 90;
+    background: var(--sheet-backdrop);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .sheet-overlay.open {
+    display: flex;
+  }
+
+  .sheet-overlay.center {
+    align-items: center;
+    padding: 18px;
+  }
+
+  .bottom-sheet {
+    width: 100%;
+    max-height: 88%;
+    overflow-y: auto;
+    background: var(--glass-bg-elevated);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    border-top: 1px solid var(--glass-border);
+    border-radius: 32px 32px 0 0;
+    padding: 12px 20px calc(var(--safe-bottom) + 24px);
+    box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.22);
+    scrollbar-width: none;
+  }
+
+  .sheet-grabber {
+    width: 44px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--text-tertiary);
+    opacity: 0.35;
+    margin: 0 auto 14px;
+  }
+
+  .sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .sheet-title {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .sheet-close-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: var(--glass-inset);
+    color: var(--text-secondary);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .siri-row {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scrollbar-width: none;
+  }
+
+  .siri-chip {
+    border: 1px solid rgba(0, 122, 255, 0.24);
+    background: linear-gradient(135deg, rgba(0, 122, 255, 0.10), rgba(175, 82, 222, 0.10));
+    color: var(--text-primary);
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .inset-group {
+    background: var(--glass-inset);
+    border-radius: 18px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+
+  .inset-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .sheet-input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 15.5px;
+    font-weight: 600;
+    outline: none;
+  }
+
+  .chip-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .choice-chip {
+    border: 1px solid transparent;
+    background: var(--pill-active-bg);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .choice-chip.active {
+    background: var(--accent-blue);
+    color: #FFF;
+  }
+
+  .reminder-trigger-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .time-trigger-btn {
+    border: 1px solid var(--glass-border);
+    background: var(--pill-active-bg);
+    color: var(--accent-blue);
+    padding: 7px 13px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .mini-banner-preview {
+    background: var(--pill-active-bg);
+    border: 1px solid var(--glass-hairline);
+    border-radius: 16px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .sheet-submit-btn {
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 16px;
+    background: var(--accent-blue);
+    color: #FFF;
+    font-size: 15.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .sheet-submit-btn.danger {
+    background: var(--accent-red);
+  }
+
+  /* CUSTOM APPLE LIQUID GLASS CLOCK POPUP */
+  .clock-modal {
+    width: 100%;
+    max-width: 348px;
+    background: var(--glass-bg-elevated);
+    backdrop-filter: blur(34px) saturate(200%);
+    -webkit-backdrop-filter: blur(34px) saturate(200%);
+    border: 1px solid var(--glass-border);
+    border-radius: 30px;
+    padding: 18px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+  }
+
+  .clock-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .clock-mode-switch {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--glass-inset);
+  }
+
+  .clock-mode-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .clock-mode-btn.active {
+    background: var(--pill-active-bg);
+    color: var(--text-primary);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .clock-readout-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .digit-box {
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    padding: 4px 12px;
+    border-radius: 16px;
+    background: var(--glass-inset);
+    color: var(--text-primary);
+    cursor: pointer;
+    border: 1.5px solid transparent;
+  }
+
+  .digit-box.active {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    background: rgba(0, 122, 255, 0.10);
+  }
+
+  .ampm-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ampm-btn {
+    border: none;
+    background: var(--glass-inset);
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .ampm-btn.active {
+    background: var(--accent-blue);
+    color: #FFF;
+  }
+
+  .clock-countdown-pill {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-blue);
+    margin-bottom: 12px;
+  }
+
+  /* 3D Cylindrical Glass Drum Wheels */
+  .wheel-stage {
+    position: relative;
+    height: 168px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 0.8fr;
+    border-radius: 20px;
+    background: var(--glass-inset);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .wheel-loupe {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 50%;
+    height: 40px;
+    transform: translateY(-50%);
+    border-radius: 12px;
+    background: var(--pill-active-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .wheel-col {
+    position: relative;
+    z-index: 2;
+    height: 168px;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    padding: 64px 0;
+  }
+  .wheel-col::-webkit-scrollbar {
+    display: none;
+  }
+
+  .wheel-item {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    scroll-snap-align: center;
+    cursor: pointer;
+  }
+
+  .wheel-item.selected {
+    color: var(--text-primary);
+  }
+
+  /* Chronograph Radial Dial */
+  .dial-stage {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  .dial-stage.active {
+    display: flex;
+  }
+
+  .wheel-stage.hidden {
+    display: none;
+  }
+
+  .clock-presets {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scrollbar-width: none;
+  }
+
+  .clock-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.3fr;
+    gap: 8px;
+  }
+
+  .clock-btn {
+    height: 40px;
+    border-radius: 13px;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .clock-btn.clear {
+    background: rgba(255, 59, 48, 0.12);
+    color: var(--accent-red);
+  }
+
+  .clock-btn.cancel {
+    background: var(--glass-inset);
+    color: var(--text-primary);
+  }
+
+  .clock-btn.set {
+    background: var(--accent-blue);
+    color: #FFF;
+  }
+
+  /* Icon & Color Swatches in Habit Creator */
+  .swatch-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .color-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    cursor: pointer;
+  }
+
+  .color-swatch.active {
+    border-color: var(--text-primary);
+    transform: scale(1.1);
+  }
+
+  .icon-choice {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1.5px solid transparent;
+    background: var(--pill-active-bg);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .icon-choice.active {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+  }
+</style>
+</head>
+<body>
+
+<div class="mobile-toast" id="mobileToast">
+  <span class="island-dot"></span>
+  <span id="mobileToastText">Saved</span>
+</div>
+
+<div class="device-frame" id="deviceFrame">
+  <div class="ambient-bg"></div>
+
+  <!-- On-Screen iOS 27.3 Push Notification Banner -->
+  <div class="push-banner" id="pushBanner">
+    <div class="push-top">
+      <div class="push-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div class="push-meta">
+        <div class="push-app-row">
+          <span>DAILY FLOW</span>
+          <span>NOW</span>
+        </div>
+        <div class="push-title" id="pushTitle">Focus Session</div>
+        <div class="push-sub" id="pushSub">Scheduled task reminder is due now</div>
+      </div>
+    </div>
+    <div class="push-actions">
+      <button class="push-btn primary" onclick="completeFromPush()">Mark Done</button>
+      <button class="push-btn secondary" onclick="snoozeFromPush()">Snooze 5m</button>
+    </div>
+  </div>
+
+  <!-- Desktop Status Bar & Dynamic Island -->
+  <div class="status-bar-desktop">
+    <span id="statusClock">10:36</span>
+    <div class="dynamic-island" id="dynamicIsland">
+      <span class="island-dot"></span>
+      <span id="islandText">Daily Flow</span>
+      <button class="island-undo-btn" id="islandUndoBtn" style="display:none" onclick="undoLastDelete()">Undo</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <svg width="15" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.3" y="5" width="3" height="7" rx="1"/><rect x="8.6" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="22" height="11" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="19" height="10" rx="3"/><rect x="3" y="3" width="15" height="6" rx="1.5" fill="currentColor"/><path d="M22 4v4" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+
+  <!-- Clean Top Utility Header -->
+  <header class="app-header">
+    <div class="date-pill">
+      <span class="date-pill-dot"></span>
+      <span id="headerDatePill">Fri 20</span>
+    </div>
+    <div class="header-actions">
+      <button class="icon-pill-btn" onclick="openRemindersSheet()" aria-label="Scheduled Reminders">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-badge" id="bellBadge">0</span>
+      </button>
+      <button class="icon-pill-btn" onclick="toggleTheme()" aria-label="Toggle Light or Dark Theme">
+        <svg id="themeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="reset-pill-btn" id="resetBtn" onclick="handleResetClick()">Reset</button>
+    </div>
+  </header>
+
+  <!-- Main Scrollable Content -->
+  <main class="main-scroll">
+
+    <!-- ==================== TAB 1: TODAY ==================== -->
+    <section class="tab-view active" id="view-today">
+      <div class="greeting-block">
+        <h1 class="greeting-title" id="greetingHeading">Good Morning</h1>
+        <p class="greeting-sub" id="greetingSubtitle">Friday, November 20 · 0 of 0 tasks complete</p>
+      </div>
+
+      <!-- 7-Day Pill Ribbon -->
+      <div class="glass-card week-ribbon" id="weekRibbon"></div>
+
+      <!-- Focus Spotlight Smart Stack -->
+      <div class="glass-card spotlight-card" id="spotlightCard"></div>
+
+      <!-- Asymmetric 2-Column Apple Widget Bento Grid -->
+      <div class="bento-grid">
+        <!-- Left Tall Widget: Flow Pulse -->
+        <div class="glass-card bento-left" onclick="switchTab('progress')">
+          <div class="bento-header">
+            <span>Flow Pulse</span>
+            <span class="bento-chev">›</span>
+          </div>
+          <div class="pulse-ring-wrap">
+            <svg width="112" height="112" viewBox="0 0 112 112" style="transform:rotate(-90deg)">
+              <circle cx="56" cy="56" r="46" fill="none" stroke="var(--ring-track)" stroke-width="7"/>
+              <circle id="ringTasks" cx="56" cy="56" r="46" fill="none" stroke="#007AFF" stroke-width="7" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/>
+              <circle cx="56" cy="56" r="36" fill="none" stroke="var(--ring-track)" stroke-width="7"/>
+              <circle id="ringHabits" cx="56" cy="56" r="36" fill="none" stroke="#34C759" stroke-width="7" stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="226"/>
+              <circle cx="56" cy="56" r="26" fill="none" stroke="var(--ring-track)" stroke-width="7"/>
+              <circle id="ringNotes" cx="56" cy="56" r="26" fill="none" stroke="#FF9F0A" stroke-width="7" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="163"/>
+            </svg>
+            <div class="pulse-center-text">
+              <div class="pulse-pct" id="pulsePct">0%</div>
+              <div class="pulse-lbl">FLOW</div>
+            </div>
+          </div>
+          <div class="pulse-legend">
+            <div class="pulse-row">
+              <span class="pulse-dot-lbl"><span class="dot-ind" style="background:#007AFF"></span>Tasks</span>
+              <strong id="pulseTasksTxt">0/0</strong>
+            </div>
+            <div class="pulse-row">
+              <span class="pulse-dot-lbl"><span class="dot-ind" style="background:#34C759"></span>Habits</span>
+              <strong id="pulseHabitsTxt">0%</strong>
+            </div>
+            <div class="pulse-row">
+              <span class="pulse-dot-lbl"><span class="dot-ind" style="background:#FF9F0A"></span>Notes</span>
+              <strong id="pulseNotesTxt">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Stacked Bento Column -->
+        <div class="bento-right">
+          <div class="glass-card bento-mini">
+            <div class="bento-header">
+              <span>Quick Jot</span>
+              <button class="section-link" style="font-size:11.5px" onclick="switchTab('notes')">All ›</button>
+            </div>
+            <div class="quick-jot-preview" id="quickJotPreview">Capture a quick thought or reminder for today.</div>
+            <form class="quick-jot-form" onsubmit="submitQuickJot(event)">
+              <input class="quick-jot-input" id="quickJotInput" type="text" placeholder="Jot a thought..." />
+              <button class="quick-jot-send" type="submit">↵</button>
+            </form>
+          </div>
+
+          <div class="glass-card bento-mini">
+            <div class="bento-header">
+              <span>Alerts & Rhythm</span>
+              <span class="streak-badge" id="bentoStreakBadge">🔥 0d</span>
+            </div>
+            <div class="alerts-count-text" id="activeAlertsText">0 Active Reminders</div>
+            <button class="test-alert-btn" onclick="triggerTestAlert5s()">🔔 Test Alert (5s)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Rituals 2-Column Matrix -->
+      <div class="section-head">
+        <h2 class="section-title">Daily Rituals</h2>
+        <button class="section-link" onclick="switchTab('habits')">All Habits ›</button>
+      </div>
+      <div class="ritual-matrix" id="todayRitualMatrix"></div>
+
+      <!-- Today's Tasks -->
+      <div class="section-head">
+        <h2 class="section-title">Today's Tasks</h2>
+        <span class="section-hint">Swipe cards left/right</span>
+      </div>
+
+      <div class="segmented-bar" id="taskFilterBar">
+        <button class="seg-btn active" data-filter="all" onclick="setTaskFilter('all')">All 0</button>
+        <button class="seg-btn" data-filter="scheduled" onclick="setTaskFilter('scheduled')">Scheduled 0</button>
+        <button class="seg-btn" data-filter="focus" onclick="setTaskFilter('focus')">Focus 0</button>
+        <button class="seg-btn" data-filter="done" onclick="setTaskFilter('done')">Done 0</button>
+      </div>
+
+      <div class="search-drawer" id="taskSearchDrawer">
+        <div class="glass-card search-input-wrap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="taskSearchInput" placeholder="Search tasks or categories..." oninput="renderTasks()" />
+        </div>
+      </div>
+
+      <div class="task-list" id="todayTaskList"></div>
+    </section>
+
+    <!-- ==================== TAB 2: HABITS ==================== -->
+    <section class="tab-view" id="view-habits">
+      <div class="view-header-row">
+        <div>
+          <h1 class="view-title">Habits</h1>
+          <p class="view-sub">Daily Rituals & Streaks</p>
+        </div>
+        <button class="primary-pill-btn" onclick="openNewHabitSheet()">+ New</button>
+      </div>
+
+      <div class="glass-card habits-hero">
+        <div class="habits-hero-top">
+          <div style="position:relative;width:84px;height:84px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="84" height="84" viewBox="0 0 84 84" style="transform:rotate(-90deg)">
+              <circle cx="42" cy="42" r="35" fill="none" stroke="var(--ring-track)" stroke-width="8"/>
+              <circle id="habitsHeroRing" cx="42" cy="42" r="35" fill="none" stroke="#34C759" stroke-width="8" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="220"/>
+            </svg>
+            <div style="position:absolute;text-align:center;">
+              <div style="font-size:17px;font-weight:800;" id="habitsHeroPct">0%</div>
+              <div style="font-size:9.5px;font-weight:700;color:var(--text-tertiary);">TODAY</div>
+            </div>
+          </div>
+          <div class="rhythm-bars" id="habitsRhythmBars"></div>
+        </div>
+        <div class="habits-hero-stats">
+          <div class="hero-stat-pill"><span>🔥 Best Streak</span><strong id="habitsBestStreak">0d</strong></div>
+          <div class="hero-stat-pill"><span>✨ Active Rituals</span><strong id="habitsActiveCount">0</strong></div>
+        </div>
+      </div>
+
+      <div class="segmented-bar three" id="habitFilterBar">
+        <button class="seg-btn active" data-hfilter="all" onclick="setHabitFilter('all')">All</button>
+        <button class="seg-btn" data-hfilter="active" onclick="setHabitFilter('active')">Active</button>
+        <button class="seg-btn" data-hfilter="completed" onclick="setHabitFilter('completed')">Completed</button>
+      </div>
+
+      <div class="habit-card-list" id="habitsFullList"></div>
+    </section>
+
+    <!-- ==================== TAB 3: NOTES ==================== -->
+    <section class="tab-view" id="view-notes">
+      <div class="view-header-row">
+        <div>
+          <h1 class="view-title">Notes</h1>
+          <p class="view-sub">Micro-Thoughts & Quick Captures</p>
+        </div>
+      </div>
+
+      <div class="glass-card search-input-wrap" style="margin-bottom:10px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="notesSearchInput" placeholder="Search quick notes..." oninput="renderNotes()" />
+      </div>
+
+      <div class="notes-tag-row" id="notesTagRow">
+        <button class="tag-chip active" data-ntag="All" onclick="setNoteTag('All')">All</button>
+        <button class="tag-chip" data-ntag="Thought" onclick="setNoteTag('Thought')">Thought</button>
+        <button class="tag-chip" data-ntag="Idea" onclick="setNoteTag('Idea')">Idea</button>
+        <button class="tag-chip" data-ntag="Reminder" onclick="setNoteTag('Reminder')">Reminder</button>
+      </div>
+
+      <div class="note-list" id="notesList"></div>
+    </section>
+
+    <!-- ==================== TAB 4: PROGRESS ==================== -->
+    <section class="tab-view" id="view-progress">
+      <div class="view-header-row">
+        <div>
+          <h1 class="view-title">Progress</h1>
+          <p class="view-sub">Live Rhythm & Consistency</p>
+        </div>
+      </div>
+
+      <!-- 7-Day Flow Score -->
+      <div class="glass-card analytics-card">
+        <div class="analytics-head">
+          <span class="analytics-title">7-Day Flow Score</span>
+          <span class="analytics-badge" id="flowScoreBadge">Today · 0%</span>
+        </div>
+        <div class="flow-bars-grid" id="progressFlowBars"></div>
+      </div>
+
+      <!-- 28-Day Habit Consistency (Blank Past/Future; Blank/Half/Full Green Today) -->
+      <div class="glass-card analytics-card">
+        <div class="analytics-head">
+          <span class="analytics-title">28-Day Habit Consistency</span>
+          <span class="analytics-badge green" id="heatmapTodayBadge">0% Today</span>
+        </div>
+        <div class="heatmap-grid" id="heatmapGrid"></div>
+        <div class="heatmap-legend">
+          <span id="heatmapSelectedDayLabel">Today · Live</span>
+          <div class="legend-items">
+            <span class="legend-item"><span class="legend-swatch"></span>Blank (0%)</span>
+            <span class="legend-item"><span class="legend-swatch half"></span>Half</span>
+            <span class="legend-item"><span class="legend-swatch full"></span>Green</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Balance Donut -->
+      <div class="glass-card analytics-card">
+        <div class="analytics-head">
+          <span class="analytics-title">Daily Balance</span>
+        </div>
+        <div class="donut-wrap">
+          <svg width="104" height="104" viewBox="0 0 104 104" style="transform:rotate(-90deg);flex-shrink:0;">
+            <circle cx="52" cy="52" r="40" fill="none" stroke="var(--ring-track)" stroke-width="12"/>
+            <circle id="donutTasks" cx="52" cy="52" r="40" fill="none" stroke="#007AFF" stroke-width="12" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
+            <circle id="donutHabits" cx="52" cy="52" r="40" fill="none" stroke="#34C759" stroke-width="12" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
+            <circle id="donutNotes" cx="52" cy="52" r="40" fill="none" stroke="#FF9F0A" stroke-width="12" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
+          </svg>
+          <div class="donut-legend">
+            <div class="donut-row"><span><span style="color:#007AFF">●</span> Tasks</span><span id="balTasksPct">0%</span></div>
+            <div class="donut-row"><span><span style="color:#34C759">●</span> Habits</span><span id="balHabitsPct">0%</span></div>
+            <div class="donut-row"><span><span style="color:#FF9F0A">●</span> Notes</span><span id="balNotesPct">0%</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Today Floating Action Capsules -->
+  <div class="floating-action-bar" id="todayFabBar">
+    <button class="fab-search" onclick="toggleTaskSearch()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <span>Search</span>
+    </button>
+    <button class="fab-new-task" onclick="openNewTaskSheet()">
+      <span>+ New Task</span>
+    </button>
+  </div>
+
+  <!-- Notes Floating Composer Bar -->
+  <form class="note-composer-bar" id="notesComposerBar" onsubmit="submitNoteFromTab(event)">
+    <input type="text" id="notesTabInput" placeholder="Write a quick note..." />
+    <button type="submit" class="note-send-btn">↑</button>
+  </form>
+
+  <!-- Floating 4-Tab Glass Dock -->
+  <nav class="bottom-dock">
+    <button class="dock-btn active" data-tab="today" onclick="switchTab('today')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <span>Today</span>
+    </button>
+    <button class="dock-btn" data-tab="habits" onclick="switchTab('habits')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span>Habits</span>
+    </button>
+    <button class="dock-btn" data-tab="notes" onclick="switchTab('notes')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Notes</span>
+    </button>
+    <button class="dock-btn" data-tab="progress" onclick="switchTab('progress')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Progress</span>
+    </button>
+  </nav>
+
+  <!-- ==================== SHEET: NEW TASK (iOS 27.3) ==================== -->
+  <div class="sheet-overlay" id="newTaskSheet" onclick="closeSheetOnBg(event, 'newTaskSheet')">
+    <div class="bottom-sheet">
+      <div class="sheet-grabber"></div>
+      <div class="sheet-header">
+        <span class="sheet-title">New Task</span>
+        <button class="sheet-close-btn" onclick="closeSheet('newTaskSheet')">×</button>
+      </div>
+
+      <div class="siri-row">
+        <button class="siri-chip" onclick="applySiriSuggestion('Deep Work Sprint', 'Focus', 'Urgent', 15)">✦ Deep Work · 15m</button>
+        <button class="siri-chip" onclick="applySiriSuggestion('Evening Wind-Down', 'Wellness', 'Medium', 60)">✦ Wind-Down · 1h</button>
+        <button class="siri-chip" onclick="applySiriSuggestion('Review Daily Priorities', 'Work', 'High', 30)">✦ Review Priorities</button>
+      </div>
+
+      <div class="inset-group">
+        <label class="inset-label">Task Title</label>
+        <input class="sheet-input" id="newTaskTitleInput" type="text" placeholder="e.g., Ship Daily Flow APK build" oninput="updatePushPreview()" />
+      </div>
+
+      <div class="inset-group">
+        <div class="reminder-trigger-row">
+          <div>
+            <span class="inset-label" style="margin-bottom:2px;">Time Reminder</span>
+            <span style="font-size:12px;color:var(--text-secondary);" id="newTaskReminderSub">No alert scheduled</span>
+          </div>
+          <button class="time-trigger-btn" id="newTaskTimeTrigger" onclick="openClockForNewTask()">🔔 Set Time ⌄</button>
+        </div>
+      </div>
+
+      <div class="mini-banner-preview">
+        <div class="push-icon" style="width:30px;height:30px;border-radius:9px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:10px;font-weight:700;color:var(--text-tertiary);">PUSH NOTIFICATION PREVIEW</div>
+          <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="previewBannerTitle">New Scheduled Task</div>
+          <div style="font-size:11.5px;color:var(--accent-blue);font-weight:600;" id="previewBannerTime">Tap Set Time to schedule push alert</div>
+        </div>
+      </div>
+
+      <div class="inset-group">
+        <label class="inset-label">Category</label>
+        <div class="chip-grid" id="newTaskCatChips">
+          <button class="choice-chip active" data-cat="Work" onclick="selectNewTaskCat('Work')">● Work</button>
+          <button class="choice-chip" data-cat="Personal" onclick="selectNewTaskCat('Personal')">● Personal</button>
+          <button class="choice-chip" data-cat="Wellness" onclick="selectNewTaskCat('Wellness')">● Wellness</button>
+          <button class="choice-chip" data-cat="Focus" onclick="selectNewTaskCat('Focus')">● Focus</button>
+        </div>
+      </div>
+
+      <div class="inset-group">
+        <label class="inset-label">Priority</label>
+        <div class="chip-grid" id="newTaskPrioChips">
+          <button class="choice-chip active" data-prio="None" onclick="selectNewTaskPrio('None')">None</button>
+          <button class="choice-chip" data-prio="Low" onclick="selectNewTaskPrio('Low')">Low</button>
+          <button class="choice-chip" data-prio="Medium" onclick="selectNewTaskPrio('Medium')">Medium</button>
+          <button class="choice-chip" data-prio="High" onclick="selectNewTaskPrio('High')">High</button>
+          <button class="choice-chip" data-prio="Urgent" onclick="selectNewTaskPrio('Urgent')">Urgent</button>
+        </div>
+      </div>
+
+      <button class="sheet-submit-btn" onclick="createNewTask()">Add Task</button>
+    </div>
+  </div>
+
+  <!-- ==================== CUSTOM APPLE LIQUID GLASS CLOCK POPUP ==================== -->
+  <div class="sheet-overlay center" id="clockPopupOverlay" onclick="closeSheetOnBg(event, 'clockPopupOverlay')">
+    <div class="clock-modal">
+      <div class="clock-top-bar">
+        <span style="font-size:14px;font-weight:700;">Set Reminder Time</span>
+        <div class="clock-mode-switch">
+          <button class="clock-mode-btn active" id="modeWheelBtn" onclick="setClockMode('wheel')">Wheel</button>
+          <button class="clock-mode-btn" id="modeDialBtn" onclick="setClockMode('dial')">Dial</button>
+        </div>
+      </div>
+
+      <div class="clock-readout-row">
+        <div class="digit-box active" id="clockHourBox" onclick="setDialTarget('hour')">09</div>
+        <span style="font-size:32px;font-weight:800;color:var(--text-tertiary);">:</span>
+        <div class="digit-box" id="clockMinBox" onclick="setDialTarget('minute')">30</div>
+        <div class="ampm-col">
+          <button class="ampm-btn active" id="amBtn" onclick="setClockAmPm('AM')">AM</button>
+          <button class="ampm-btn" id="pmBtn" onclick="setClockAmPm('PM')">PM</button>
+        </div>
+      </div>
+
+      <div class="clock-countdown-pill" id="clockCountdownPill">Today · in 15m</div>
+
+      <!-- Mode A: 3D Cylindrical Glass Drum Wheels -->
+      <div class="wheel-stage" id="clockWheelStage">
+        <div class="wheel-loupe"></div>
+        <div class="wheel-col" id="wheelHours"></div>
+        <div class="wheel-col" id="wheelMinutes"></div>
+        <div class="wheel-col" id="wheelAmPm"></div>
+      </div>
+
+      <!-- Mode B: Precision Chronograph Radial Dial -->
+      <div class="dial-stage" id="clockDialStage">
+        <svg id="chronoDialSvg" width="224" height="224" viewBox="0 0 224 224" style="touch-action:none;cursor:pointer;"></svg>
+      </div>
+
+      <div class="clock-presets">
+        <button class="choice-chip" onclick="applyClockPresetSeconds(5)">In 5s (Test)</button>
+        <button class="choice-chip" onclick="applyClockPresetMinutes(15)">+15m</button>
+        <button class="choice-chip" onclick="applyClockPresetMinutes(30)">+30m</button>
+        <button class="choice-chip" onclick="applyClockPresetMinutes(60)">+1h</button>
+        <button class="choice-chip" onclick="applyClockFixed(9,0,'AM')">9:00 AM</button>
+        <button class="choice-chip" onclick="applyClockFixed(9,0,'PM')">9:00 PM</button>
+      </div>
+
+      <div class="clock-actions">
+        <button class="clock-btn clear" onclick="clearClockSelection()">Clear</button>
+        <button class="clock-btn cancel" onclick="closeSheet('clockPopupOverlay')">Cancel</button>
+        <button class="clock-btn set" onclick="confirmClockSelection()">Set Time</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SHEET: NEW HABIT ==================== -->
+  <div class="sheet-overlay" id="newHabitSheet" onclick="closeSheetOnBg(event, 'newHabitSheet')">
+    <div class="bottom-sheet">
+      <div class="sheet-grabber"></div>
+      <div class="sheet-header">
+        <span class="sheet-title">New Daily Ritual</span>
+        <button class="sheet-close-btn" onclick="closeSheet('newHabitSheet')">×</button>
+      </div>
+
+      <div class="inset-group">
+        <label class="inset-label">Habit Name</label>
+        <input class="sheet-input" id="newHabitNameInput" type="text" placeholder="e.g., Morning Hydration" />
+      </div>
+
+      <div class="inset-group">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span class="inset-label" style="margin:0;">Daily Target</span>
+          <div class="stepper-pill">
+            <button class="step-btn" type="button" onclick="adjustNewHabitTarget(-1)">−</button>
+            <span class="step-val" id="newHabitTargetVal">8</span>
+            <button class="step-btn" type="button" onclick="adjustNewHabitTarget(1)">+</button>
+          </div>
+        </div>
+        <div class="chip-grid" style="margin-top:10px;" id="newHabitUnitChips">
+          <button class="choice-chip active" data-unit="times" onclick="selectHabitUnit('times')">times</button>
+          <button class="choice-chip" data-unit="glasses" onclick="selectHabitUnit('glasses')">glasses</button>
+          <button class="choice-chip" data-unit="mins" onclick="selectHabitUnit('mins')">mins</button>
+          <button class="choice-chip" data-unit="pages" onclick="selectHabitUnit('pages')">pages</button>
+          <button class="choice-chip" data-unit="km" onclick="selectHabitUnit('km')">km</button>
+        </div>
+      </div>
+
+      <div class="inset-group">
+        <label class="inset-label">Icon & Accent</label>
+        <div class="swatch-row" id="habitIconSwatches" style="margin-bottom:10px;"></div>
+        <div class="swatch-row" id="habitColorSwatches"></div>
+      </div>
+
+      <button class="sheet-submit-btn" onclick="createNewHabit()">Create Ritual</button>
+    </div>
+  </div>
+
+  <!-- ==================== SHEET: DELETE HABIT CONFIRMATION ==================== -->
+  <div class="sheet-overlay" id="deleteHabitSheet" onclick="closeSheetOnBg(event, 'deleteHabitSheet')">
+    <div class="bottom-sheet">
+      <div class="sheet-grabber"></div>
+      <div class="sheet-header">
+        <span class="sheet-title">Delete Habit?</span>
+        <button class="sheet-close-btn" onclick="closeSheet('deleteHabitSheet')">×</button>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px;" id="deleteHabitDesc">
+        This will remove this daily ritual and its progress from Today.
+      </p>
+      <div style="display:flex;gap:10px;">
+        <button class="clock-btn cancel" style="flex:1;height:46px;" onclick="closeSheet('deleteHabitSheet')">Cancel</button>
+        <button class="sheet-submit-btn danger" style="flex:1;height:46px;" onclick="confirmDeleteHabit()">Delete Habit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SHEET: SCHEDULED REMINDERS ==================== -->
+  <div class="sheet-overlay" id="remindersSheet" onclick="closeSheetOnBg(event, 'remindersSheet')">
+    <div class="bottom-sheet">
+      <div class="sheet-grabber"></div>
+      <div class="sheet-header">
+        <span class="sheet-title">Scheduled Reminders</span>
+        <button class="sheet-close-btn" onclick="closeSheet('remindersSheet')">×</button>
+      </div>
+      <div id="scheduledRemindersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+      <button class="sheet-submit-btn" onclick="closeSheet('remindersSheet');triggerTestAlert5s();">🔔 Preview Push Notification (5s)</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Defensive SafeStorage with automatic in-memory fallback
+  const SafeStorage = (() => {
+    const mem = {};
+    return {
+      get(key) {
+        try { return window.localStorage.getItem(key); } catch (e) { return mem[key] || null; }
+      },
+      set(key, val) {
+        try { window.localStorage.setItem(key, val); } catch (e) { mem[key] = val; }
+      }
+    };
+  })();
+
+  const HABIT_ICONS = {
+    drop: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+    book: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+    sun: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/></svg>',
+    walk: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="13" cy="4" r="2"/><path d="M10 21l2-7 3 3v4M7 13l3-4 4 2 3-3"/></svg>',
+    bolt: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    heart: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+  };
+
+  const HABIT_COLORS = ['#007AFF', '#34C759', '#FF9F0A', '#AF52DE', '#FF3B30', '#5AC8FA'];
+
+  const CAT_COLORS = {
+    Work: { fg: '#007AFF', bg: 'rgba(0, 122, 255, 0.12)' },
+    Personal: { fg: '#FF9F0A', bg: 'rgba(255, 159, 10, 0.14)' },
+    Wellness: { fg: '#34C759', bg: 'rgba(52, 199, 89, 0.14)' },
+    Focus: { fg: '#AF52DE', bg: 'rgba(175, 82, 222, 0.14)' }
+  };
+
+  function getDefaultState() {
+    const now = Date.now();
+    return {
+      theme: 'light',
+      selectedDayIndex: 4, // Friday (0=Mon .. 6=Sun)
+      spotlightIdx: 0,
+      taskFilter: 'all',
+      habitFilter: 'all',
+      noteTag: 'All',
+      tasks: [
+        {
+          id: 't1',
+          title: 'Focus Session · Priority Item',
+          category: 'Work',
+          priority: 'Urgent',
+          done: false,
+          reminderAt: now + 15 * 60 * 1000,
+          notified: false
+        },
+        {
+          id: 't2',
+          title: 'Review Design System Tokens',
+          category: 'Focus',
+          priority: 'High',
+          done: false,
+          reminderAt: null,
+          notified: false
+        },
+        {
+          id: 't3',
+          title: 'Evening Mobility & Hydration Check',
+          category: 'Wellness',
+          priority: 'None',
+          done: true,
+          reminderAt: null,
+          notified: false
+        }
+      ],
+      habits: [
+        { id: 'h1', name: 'Hydration', current: 4, target: 8, unit: 'glasses', streak: 14, icon: 'drop', color: '#007AFF' },
+        { id: 'h2', name: 'Deep Reading', current: 4, target: 8, unit: 'pages', streak: 9, icon: 'book', color: '#AF52DE' },
+        { id: 'h3', name: 'Mindful Breath', current: 1, target: 1, unit: 'times', streak: 21, icon: 'sun', color: '#34C759' },
+        { id: 'h4', name: 'Evening Walk', current: 2, target: 4, unit: 'km', streak: 6, icon: 'walk', color: '#FF9F0A' }
+      ],
+      notes: [
+        { id: 'n1', text: 'iOS 27.3 Liquid Glass adapts cleanly across daylight and obsidian themes.', tag: 'Idea', pinned: true, time: '09:40 AM' },
+        { id: 'n2', text: 'Keep afternoon focus block uninterrupted until 4:30 PM.', tag: 'Thought', pinned: false, time: '08:15 AM' }
+      ]
+    };
+  }
+
+  let state = (() => {
+    const raw = SafeStorage.get('daily_flow_state_v273');
+    if (raw) {
+      try { return JSON.parse(raw); } catch (e) {}
+    }
+    return getDefaultState();
+  })();
+
+  function saveState() {
+    SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
+  }
+
+  // Transient UI state
+  let pendingNewTaskReminderAt = null;
+  let newTaskCat = 'Work';
+  let newTaskPrio = 'None';
+  let newHabitTarget = 8;
+  let newHabitUnit = 'times';
+  let newHabitIcon = 'drop';
+  let newHabitColor = '#007AFF';
+  let habitToDeleteId = null;
+  let lastDeletedBackup = null;
+  let undoTimer = null;
+  let resetConfirmArmed = false;
+  let resetTimer = null;
+  let activePushTaskId = null;
+  let selectedHeatmapIdx = 18; // Today index in 28-day grid (0..27)
+
+  // Clock Popup State
+  let clockContext = 'newTask'; // 'newTask' | taskId
+  let clockMode = 'wheel'; // 'wheel' | 'dial'
+  let dialTarget = 'hour'; // 'hour' | 'minute'
+  let clockHour12 = 9;
+  let clockMinute = 30;
+  let clockAmPm = 'PM';
+  let clockPresetExactMs = null;
+
+  // Gentle Web Audio Chime & Detent Tick
+  let audioCtx = null;
+  function playTone(freq, dur, vol) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur);
+    } catch (e) {}
+  }
+
+  function hapticFeedback() {
+    if (window.AndroidBridge && typeof window.AndroidBridge.hapticTick === 'function') {
+      try { window.AndroidBridge.hapticTick(); } catch (e) {}
+    }
+  }
+
+  // Dynamic Island & Mobile Toast Feedback
+  let islandTimeout = null;
+  function showIslandMessage(msg, withUndo = false) {
+    const island = document.getElementById('dynamicIsland');
+    const txt = document.getElementById('islandText');
+    const undoBtn = document.getElementById('islandUndoBtn');
+    const mToast = document.getElementById('mobileToast');
+    const mTxt = document.getElementById('mobileToastText');
+
+    txt.textContent = msg;
+    undoBtn.style.display = withUndo ? 'inline-block' : 'none';
+    island.classList.add('expanded');
+
+    mTxt.textContent = msg;
+    mToast.classList.add('visible');
+
+    clearTimeout(islandTimeout);
+    islandTimeout = setTimeout(() => {
+      island.classList.remove('expanded');
+      txt.textContent = 'Daily Flow';
+      undoBtn.style.display = 'none';
+      mToast.classList.remove('visible');
+    }, withUndo ? 4000 : 2200);
+  }
+
+  // Theme Management
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', state.theme);
+    const isDark = state.theme === 'dark';
+    document.getElementById('themeIcon').innerHTML = isDark
+      ? '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>'
+      : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    if (window.AndroidBridge && typeof window.AndroidBridge.setStatusBarDarkIcons === 'function') {
+      try { window.AndroidBridge.setStatusBarDarkIcons(!isDark); } catch (e) {}
+    }
+  }
+
+  function toggleTheme() {
+    state.theme = state.theme === 'light' ? 'dark' : 'light';
+    saveState();
+    applyTheme();
+    hapticFeedback();
+  }
+
+  // Two-Tap Reset Sample Data
+  function handleResetClick() {
+    const btn = document.getElementById('resetBtn');
+    if (!resetConfirmArmed) {
+      resetConfirmArmed = true;
+      btn.textContent = 'Confirm';
+      btn.classList.add('confirming');
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => {
+        resetConfirmArmed = false;
+        btn.textContent = 'Reset';
+        btn.classList.remove('confirming');
+      }, 3000);
+    } else {
+      clearTimeout(resetTimer);
+      resetConfirmArmed = false;
+      btn.textContent = 'Reset';
+      btn.classList.remove('confirming');
+      const curTheme = state.theme;
+      state = getDefaultState();
+      state.theme = curTheme;
+      saveState();
+      renderAll();
+      showIslandMessage('Sample Data Restored');
+      hapticFeedback();
+    }
+  }
+
+  // Navigation Tabs
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + tab).classList.add('active');
+    document.querySelectorAll('.dock-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    document.getElementById('todayFabBar').classList.toggle('hidden', tab !== 'today');
+    document.getElementById('notesComposerBar').classList.toggle('visible', tab === 'notes');
+    renderAll();
+  }
+
+  // Date & Time Formatting Helpers
+  function formatTime12(ms) {
+    const d = new Date(ms);
+    let h = d.getHours();
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${String(h).padStart(2, '0')}:${m} ${ap}`;
+  }
+
+  function formatRelativeCountdown(ms) {
+    const diff = ms - Date.now();
+    if (diff <= 0) return 'Due Now';
+    const sec = Math.ceil(diff / 1000);
+    if (sec < 60) return `in ${sec}s`;
+    const min = Math.round(sec / 60);
+    if (min < 60) return `in ${min}m`;
+    const hrs = Math.floor(min / 60);
+    const remM = min % 60;
+    return remM > 0 ? `in ${hrs}h ${remM}m` : `in ${hrs}h`;
+  }
+
+  function updateLiveClocks() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const sc = document.getElementById('statusClock');
+    if (sc) sc.textContent = `${hh}:${mm}`;
+
+    const hr = now.getHours();
+    const greet = hr < 12 ? 'Good Morning' : hr < 18 ? 'Good Afternoon' : 'Good Evening';
+    const gh = document.getElementById('greetingHeading');
+    if (gh) gh.textContent = greet;
+
+    const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const daysFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    document.getElementById('headerDatePill').textContent = `${daysShort[now.getDay()]} ${now.getDate()}`;
+
+    const doneCount = state.tasks.filter(t => t.done).length;
+    document.getElementById('greetingSubtitle').textContent =
+      `${daysFull[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} · ${doneCount} of ${state.tasks.length} tasks complete`;
+  }
+
+  // Metrics Calculation
+  function getMetrics() {
+    const totalTasks = state.tasks.length;
+    const doneTasks = state.tasks.filter(t => t.done).length;
+    const taskPct = totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
+
+    let habitRatioSum = 0;
+    state.habits.forEach(h => {
+      habitRatioSum += Math.min(1, h.current / Math.max(1, h.target));
+    });
+    const habitPct = state.habits.length === 0 ? 0 : Math.round((habitRatioSum / state.habits.length) * 100);
+
+    const notePct = Math.min(100, state.notes.length * 25);
+    const flowPct = Math.round((taskPct * 0.4) + (habitPct * 0.4) + (notePct * 0.2));
+    const bestStreak = state.habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
+    const activeReminders = state.tasks.filter(t => !t.done && t.reminderAt).length;
+
+    return { totalTasks, doneTasks, taskPct, habitPct, notePct, flowPct, bestStreak, activeReminders };
+  }
+
+  // Render 7-Day Ribbon
+  function renderWeekRibbon() {
+    const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const nums = [16, 17, 18, 19, 20, 21, 22];
+    const container = document.getElementById('weekRibbon');
+    container.innerHTML = letters.map((l, idx) => `
+      <button class="day-cell ${state.selectedDayIndex === idx ? 'selected' : ''}" onclick="selectWeekDay(${idx})">
+        <span class="day-letter">${l}</span>
+        <span class="day-num">${nums[idx]}</span>
+      </button>
+    `).join('');
+  }
+
+  function selectWeekDay(idx) {
+    state.selectedDayIndex = idx;
+    saveState();
+    renderWeekRibbon();
+    hapticFeedback();
+  }
+
+  // Render Focus Spotlight Smart Stack
+  function renderSpotlight() {
+    const card = document.getElementById('spotlightCard');
+    const activeTasks = state.tasks.filter(t => !t.done);
+    if (activeTasks.length === 0) {
+      card.classList.add('peak');
+      card.innerHTML = `
+        <div class="spotlight-top">
+          <span class="spotlight-kicker">PEAK FLOW ACHIEVED</span>
+          <span class="streak-badge">100% Clear</span>
+        </div>
+        <div class="spotlight-title">All focus items completed for today.</div>
+        <div class="spotlight-bottom">
+          <span style="font-size:12px;color:var(--text-secondary);">Tap + New Task below to plan ahead</span>
+          <button class="spotlight-cta green" onclick="openNewTaskSheet()">+ New Task</button>
+        </div>
+      `;
+      return;
+    }
+
+    card.classList.remove('peak');
+    if (state.spotlightIdx >= activeTasks.length) state.spotlightIdx = 0;
+    const item = activeTasks[state.spotlightIdx];
+    const rel = item.reminderAt ? `${formatTime12(item.reminderAt)} · ${formatRelativeCountdown(item.reminderAt)}` : `${item.category} · ${item.priority === 'None' ? 'Focus Item' : item.priority}`;
+    const isDue = item.reminderAt && item.reminderAt <= Date.now();
+
+    card.innerHTML = `
+      <div class="spotlight-top">
+        <span class="spotlight-kicker">FOCUS SPOTLIGHT</span>
+        <div class="stack-pager">
+          <button class="pager-btn" onclick="cycleSpotlight(-1)">‹</button>
+          <span>${state.spotlightIdx + 1} of ${activeTasks.length}</span>
+          <button class="pager-btn" onclick="cycleSpotlight(1)">›</button>
+        </div>
+      </div>
+      <div class="spotlight-title">${escapeHtml(item.title)}</div>
+      <div class="spotlight-bottom">
+        <span class="reminder-chip ${isDue ? 'due' : ''}">🔔 ${rel}</span>
+        <button class="spotlight-cta" onclick="toggleTaskDone('${item.id}')">Complete ✓</button>
+      </div>
+    `;
+  }
+
+  function cycleSpotlight(dir) {
+    const activeTasks = state.tasks.filter(t => !t.done);
+    if (!activeTasks.length) return;
+    state.spotlightIdx = (state.spotlightIdx + dir + activeTasks.length) % activeTasks.length;
+    renderSpotlight();
+  }
+
+  // Render Bento Widgets
+  function renderBento() {
+    const m = getMetrics();
+    document.getElementById('pulsePct').textContent = `${m.flowPct}%`;
+    document.getElementById('pulseTasksTxt').textContent = `${m.doneTasks}/${m.totalTasks}`;
+    document.getElementById('pulseHabitsTxt').textContent = `${m.habitPct}%`;
+    document.getElementById('pulseNotesTxt').textContent = `${state.notes.length}`;
+
+    document.getElementById('ringTasks').style.strokeDashoffset = 289 - (289 * m.taskPct) / 100;
+    document.getElementById('ringHabits').style.strokeDashoffset = 226 - (226 * m.habitPct) / 100;
+    document.getElementById('ringNotes').style.strokeDashoffset = 163 - (163 * m.notePct) / 100;
+
+    const topNote = state.notes.find(n => n.pinned) || state.notes[0];
+    document.getElementById('quickJotPreview').textContent = topNote
+      ? topNote.text
+      : 'Capture a quick thought or reminder for today.';
+
+    document.getElementById('bentoStreakBadge').textContent = `🔥 ${m.bestStreak}d`;
+    document.getElementById('activeAlertsText').textContent =
+      `${m.activeReminders} Active ${m.activeReminders === 1 ? 'Reminder' : 'Reminders'}`;
+    document.getElementById('bellBadge').textContent = m.activeReminders;
+    document.getElementById('bellBadge').style.display = m.activeReminders > 0 ? 'flex' : 'none';
+  }
+
+  // Render Today Daily Rituals 2-Col Matrix
+  function renderTodayRituals() {
+    const grid = document.getElementById('todayRitualMatrix');
+    const cards = state.habits.slice(0, 4).map(h => {
+      const pct = Math.min(100, Math.round((h.current / Math.max(1, h.target)) * 100));
+      return `
+        <div class="glass-card ritual-tile" onclick="stepHabit('${h.id}', 1)">
+          <div class="ritual-tile-top">
+            <div class="ritual-icon-circle" style="background:${h.color}1F;color:${h.color};">
+              ${HABIT_ICONS[h.icon] || HABIT_ICONS.drop}
+            </div>
+            <span class="ritual-fraction">${h.current}/${h.target}</span>
+          </div>
+          <div class="ritual-name">${escapeHtml(h.name)}</div>
+          <div class="ritual-bottom-bar">
+            <div class="ritual-bottom-fill" style="width:${pct}%;background:${h.color};"></div>
+          </div>
+        </div>
+      `;
+    });
+    if (cards.length < 4) {
+      cards.push(`
+        <div class="glass-card ritual-tile" style="display:flex;flex-direction:column;align-items:center;justify-content:center;border-style:dashed;" onclick="openNewHabitSheet()">
+          <span style="font-size:20px;font-weight:700;color:var(--accent-blue);">+</span>
+          <span style="font-size:12.5px;font-weight:600;color:var(--text-secondary);margin-top:2px;">New Ritual</span>
+        </div>
+      `);
+    }
+    grid.innerHTML = cards.join('');
+  }
+
+  // Task Filters & Zero-Bleed Swipeable Task List
+  function setTaskFilter(f) {
+    state.taskFilter = f;
+    saveState();
+    renderTasks();
+  }
+
+  function toggleTaskSearch() {
+    const drawer = document.getElementById('taskSearchDrawer');
+    drawer.classList.toggle('open');
+    if (drawer.classList.contains('open')) {
+      document.getElementById('taskSearchInput').focus();
+    }
+  }
+
+  function renderTasks() {
+    const allCount = state.tasks.length;
+    const schedCount = state.tasks.filter(t => !t.done && t.reminderAt).length;
+    const focusCount = state.tasks.filter(t => !t.done && (t.priority === 'High' || t.priority === 'Urgent')).length;
+    const doneCount = state.tasks.filter(t => t.done).length;
+
+    const filterBtns = document.querySelectorAll('#taskFilterBar .seg-btn');
+    filterBtns.forEach(btn => {
+      const f = btn.dataset.filter;
+      btn.classList.toggle('active', f === state.taskFilter);
+      if (f === 'all') btn.textContent = `All ${allCount}`;
+      if (f === 'scheduled') btn.textContent = `Scheduled ${schedCount}`;
+      if (f === 'focus') btn.textContent = `Focus ${focusCount}`;
+      if (f === 'done') btn.textContent = `Done ${doneCount}`;
+    });
+
+    const query = (document.getElementById('taskSearchInput').value || '').trim().toLowerCase();
+    const filtered = state.tasks.filter(t => {
+      if (state.taskFilter === 'scheduled' && (t.done || !t.reminderAt)) return false;
+      if (state.taskFilter === 'focus' && (t.done || (t.priority !== 'High' && t.priority !== 'Urgent'))) return false;
+      if (state.taskFilter === 'done' && !t.done) return false;
+      if (query && !t.title.toLowerCase().includes(query) && !t.category.toLowerCase().includes(query)) return false;
+      return true;
+    });
+
+    const list = document.getElementById('todayTaskList');
+    if (filtered.length === 0) {
+      list.innerHTML = `
+        <div class="glass-card empty-state-box">
+          <div class="empty-state-text">No tasks in ${state.taskFilter.charAt(0).toUpperCase() + state.taskFilter.slice(1)}</div>
+          <button class="section-link" onclick="openNewTaskSheet()">+ Create New Task</button>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = filtered.map(t => {
+      const c = CAT_COLORS[t.category] || CAT_COLORS.Work;
+      const prioHtml = (t.priority && t.priority !== 'None')
+        ? `<span class="prio-pill">${t.priority === 'Urgent' ? '!! Urgent' : '! ' + t.priority}</span>`
+        : '';
+      const timeHtml = t.reminderAt
+        ? `<span class="task-time-pill" onclick="openClockForTask('${t.id}')">🔔 ${formatTime12(t.reminderAt)} · ${formatRelativeCountdown(t.reminderAt)}</span>`
+        : '';
+      return `
+        <div class="task-swipe-wrapper" id="swipe-wrap-${t.id}"
+             ontouchstart="onTaskTouchStart(event, '${t.id}')"
+             ontouchmove="onTaskTouchMove(event, '${t.id}')"
+             ontouchend="onTaskTouchEnd(event, '${t.id}')">
+          <div class="task-swipe-actions">
+            <div class="swipe-left-bg">✓ Complete</div>
+            <div class="swipe-right-btns">
+              <button class="swipe-act-btn remind" onclick="openClockForTask('${t.id}')">Remind</button>
+              <button class="swipe-act-btn delete" onclick="deleteTask('${t.id}')">Delete</button>
+            </div>
+          </div>
+          <div class="task-card-surface" id="swipe-surf-${t.id}">
+            <button class="task-check-ring ${t.done ? 'done' : ''}" style="border-color:${t.done ? '#34C759' : c.fg}" onclick="toggleTaskDone('${t.id}')">
+              ${t.done ? '✓' : ''}
+            </button>
+            <div class="task-body">
+              <div class="task-title ${t.done ? 'done' : ''}">${escapeHtml(t.title)}</div>
+              <div class="task-meta-row">
+                <span class="cat-pill" style="color:${c.fg};background:${c.bg};">${t.category}</span>
+                ${prioHtml}
+                ${timeHtml}
+              </div>
+            </div>
+            <div class="task-row-actions">
+              <button class="row-mini-btn" onclick="openClockForTask('${t.id}')" aria-label="Set Reminder">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </button>
+              <button class="row-mini-btn" onclick="deleteTask('${t.id}')" aria-label="Delete Task">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Swipe Gestures for Task Cards
+  let touchStartX = 0;
+  let touchDeltaX = 0;
+  function onTaskTouchStart(e, id) {
+    touchStartX = e.touches[0].clientX;
+    touchDeltaX = 0;
+  }
+  function onTaskTouchMove(e, id) {
+    touchDeltaX = e.touches[0].clientX - touchStartX;
+    const wrap = document.getElementById('swipe-wrap-' + id);
+    const surf = document.getElementById('swipe-surf-' + id);
+    if (!wrap || !surf) return;
+    if (Math.abs(touchDeltaX) > 10) {
+      wrap.classList.add('swiping');
+      const clamped = Math.max(-130, Math.min(110, touchDeltaX));
+      surf.style.transform = `translateX(${clamped}px)`;
+    }
+  }
+  function onTaskTouchEnd(e, id) {
+    const wrap = document.getElementById('swipe-wrap-' + id);
+    const surf = document.getElementById('swipe-surf-' + id);
+    if (!wrap || !surf) return;
+    if (touchDeltaX > 78) {
+      surf.style.transform = 'translateX(0px)';
+      wrap.classList.remove('swiping');
+      toggleTaskDone(id);
+    } else if (touchDeltaX < -64) {
+      surf.style.transform = 'translateX(-124px)';
+    } else {
+      surf.style.transform = 'translateX(0px)';
+      wrap.classList.remove('swiping');
+    }
+  }
+
+  function toggleTaskDone(id) {
+    const t = state.tasks.find(x => x.id === id);
+    if (!t) return;
+    t.done = !t.done;
+    saveState();
+    renderAll();
+    hapticFeedback();
+    if (t.done) showIslandMessage('Task Completed ✓');
+  }
+
+  function deleteTask(id) {
+    const idx = state.tasks.findIndex(x => x.id === id);
+    if (idx === -1) return;
+    const [removed] = state.tasks.splice(idx, 1);
+    lastDeletedBackup = { type: 'task', item: removed, index: idx };
+    saveState();
+    renderAll();
+    hapticFeedback();
+    showIslandMessage('Task deleted', true);
+  }
+
+  // New Task Sheet Logic
+  function openNewTaskSheet() {
+    pendingNewTaskReminderAt = null;
+    newTaskCat = 'Work';
+    newTaskPrio = 'None';
+    document.getElementById('newTaskTitleInput').value = '';
+    document.getElementById('newTaskReminderSub').textContent = 'No alert scheduled';
+    document.getElementById('newTaskTimeTrigger').textContent = '🔔 Set Time ⌄';
+    selectNewTaskCat('Work');
+    selectNewTaskPrio('None');
+    updatePushPreview();
+    document.getElementById('newTaskSheet').classList.add('open');
+  }
+
+  function applySiriSuggestion(title, cat, prio, minsFromNow) {
+    document.getElementById('newTaskTitleInput').value = title;
+    selectNewTaskCat(cat);
+    selectNewTaskPrio(prio);
+    pendingNewTaskReminderAt = Date.now() + minsFromNow * 60 * 1000;
+    document.getElementById('newTaskReminderSub').textContent = `Scheduled · ${formatRelativeCountdown(pendingNewTaskReminderAt)}`;
+    document.getElementById('newTaskTimeTrigger').textContent = `🔔 ${formatTime12(pendingNewTaskReminderAt)} ⌄`;
+    updatePushPreview();
+    hapticFeedback();
+  }
+
+  function selectNewTaskCat(cat) {
+    newTaskCat = cat;
+    document.querySelectorAll('#newTaskCatChips .choice-chip').forEach(b => {
+      b.classList.toggle('active', b.dataset.cat === cat);
+    });
+  }
+
+  function selectNewTaskPrio(prio) {
+    newTaskPrio = prio;
+    document.querySelectorAll('#newTaskPrioChips .choice-chip').forEach(b => {
+      b.classList.toggle('active', b.dataset.prio === prio);
+    });
+  }
+
+  function updatePushPreview() {
+    const rawTitle = (document.getElementById('newTaskTitleInput').value || '').trim();
+    document.getElementById('previewBannerTitle').textContent = rawTitle || 'New Scheduled Task';
+    document.getElementById('previewBannerTime').textContent = pendingNewTaskReminderAt
+      ? `Scheduled for ${formatTime12(pendingNewTaskReminderAt)} · ${formatRelativeCountdown(pendingNewTaskReminderAt)}`
+      : 'Tap Set Time to schedule push alert';
+  }
+
+  function createNewTask() {
+    const rawTitle = (document.getElementById('newTaskTitleInput').value || '').trim();
+    const title = rawTitle || 'Focused Priority Session';
+    const newTask = {
+      id: 't_' + Date.now(),
+      title,
+      category: newTaskCat,
+      priority: newTaskPrio,
+      done: false,
+      reminderAt: pendingNewTaskReminderAt,
+      notified: false
+    };
+    state.tasks.unshift(newTask);
+    saveState();
+    scheduleNativeAndroidAlarmIfAvailable(newTask);
+    closeSheet('newTaskSheet');
+    renderAll();
+    hapticFeedback();
+    showIslandMessage(newTask.reminderAt ? `Reminder set · ${formatTime12(newTask.reminderAt)}` : 'Task Added');
+  }
+
+  // ==================== CUSTOM APPLE LIQUID GLASS CLOCK POPUP ====================
+  function initClockWheels() {
+    const hCol = document.getElementById('wheelHours');
+    const mCol = document.getElementById('wheelMinutes');
+    const apCol = document.getElementById('wheelAmPm');
+
+    hCol.innerHTML = Array.from({ length: 12 }, (_, i) => {
+      const val = i + 1;
+      return `<div class="wheel-item" data-val="${val}" onclick="scrollWheelTo('wheelHours', ${i})">${String(val).padStart(2, '0')}</div>`;
+    }).join('');
+
+    mCol.innerHTML = Array.from({ length: 60 }, (_, i) => {
+      return `<div class="wheel-item" data-val="${i}" onclick="scrollWheelTo('wheelMinutes', ${i})">${String(i).padStart(2, '0')}</div>`;
+    }).join('');
+
+    apCol.innerHTML = ['AM', 'PM'].map((ap, i) => {
+      return `<div class="wheel-item" data-val="${ap}" onclick="scrollWheelTo('wheelAmPm', ${i})">${ap}</div>`;
+    }).join('');
+
+    let lastH = -1, lastM = -1, lastAp = '';
+    hCol.addEventListener('scroll', () => {
+      const idx = Math.max(0, Math.min(11, Math.round(hCol.scrollTop / 40)));
+      const val = idx + 1;
+      if (val !== lastH) {
+        lastH = val;
+        clockHour12 = val;
+        clockPresetExactMs = null;
+        playTone(620, 0.025, 0.03);
+        syncClockUI();
+      }
+    });
+
+    mCol.addEventListener('scroll', () => {
+      const idx = Math.max(0, Math.min(59, Math.round(mCol.scrollTop / 40)));
+      if (idx !== lastM) {
+        lastM = idx;
+        clockMinute = idx;
+        clockPresetExactMs = null;
+        playTone(740, 0.02, 0.025);
+        syncClockUI();
+      }
+    });
+
+    apCol.addEventListener('scroll', () => {
+      const idx = Math.max(0, Math.min(1, Math.round(apCol.scrollTop / 40)));
+      const val = idx === 0 ? 'AM' : 'PM';
+      if (val !== lastAp) {
+        lastAp = val;
+        clockAmPm = val;
+        clockPresetExactMs = null;
+        playTone(520, 0.03, 0.03);
+        syncClockUI();
+      }
+    });
+
+    initChronoDialPointer();
+  }
+
+  function scrollWheelTo(colId, index) {
+    const col = document.getElementById(colId);
+    if (col) col.scrollTo({ top: index * 40, behavior: 'smooth' });
+  }
+
+  function openClockForNewTask() {
+    clockContext = 'newTask';
+    const base = pendingNewTaskReminderAt ? new Date(pendingNewTaskReminderAt) : new Date(Date.now() + 15 * 60 * 1000);
+    loadDateIntoClock(base);
+    document.getElementById('clockPopupOverlay').classList.add('open');
+  }
+
+  function openClockForTask(taskId) {
+    clockContext = taskId;
+    const t = state.tasks.find(x => x.id === taskId);
+    const base = (t && t.reminderAt) ? new Date(t.reminderAt) : new Date(Date.now() + 15 * 60 * 1000);
+    loadDateIntoClock(base);
+    document.getElementById('clockPopupOverlay').classList.add('open');
+  }
+
+  function loadDateIntoClock(d) {
+    let h = d.getHours();
+    clockAmPm = h >= 12 ? 'PM' : 'AM';
+    clockHour12 = h % 12 || 12;
+    clockMinute = d.getMinutes();
+    clockPresetExactMs = null;
+    setClockMode('wheel');
+    syncClockUI();
+    setTimeout(() => {
+      document.getElementById('wheelHours').scrollTop = (clockHour12 - 1) * 40;
+      document.getElementById('wheelMinutes').scrollTop = clockMinute * 40;
+      document.getElementById('wheelAmPm').scrollTop = clockAmPm === 'AM' ? 0 : 40;
+    }, 20);
+  }
+
+  function setClockMode(mode) {
+    clockMode = mode;
+    document.getElementById('modeWheelBtn').classList.toggle('active', mode === 'wheel');
+    document.getElementById('modeDialBtn').classList.toggle('active', mode === 'dial');
+    document.getElementById('clockWheelStage').classList.toggle('hidden', mode !== 'wheel');
+    document.getElementById('clockDialStage').classList.toggle('active', mode === 'dial');
+    if (mode === 'dial') renderChronoDial();
+  }
+
+  function setDialTarget(target) {
+    dialTarget = target;
+    document.getElementById('clockHourBox').classList.toggle('active', target === 'hour');
+    document.getElementById('clockMinBox').classList.toggle('active', target === 'minute');
+    if (clockMode === 'dial') renderChronoDial();
+  }
+
+  function setClockAmPm(ap) {
+    clockAmPm = ap;
+    clockPresetExactMs = null;
+    scrollWheelTo('wheelAmPm', ap === 'AM' ? 0 : 1);
+    syncClockUI();
+  }
+
+  function computeTargetTimestamp() {
+    if (clockPresetExactMs) return clockPresetExactMs;
+    const now = new Date();
+    let h24 = clockHour12 % 12;
+    if (clockAmPm === 'PM') h24 += 12;
+    const candidate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h24, clockMinute, 0, 0);
+    if (candidate.getTime() <= now.getTime()) {
+      candidate.setDate(candidate.getDate() + 1);
+    }
+    return candidate.getTime();
+  }
+
+  function syncClockUI() {
+    document.getElementById('clockHourBox').textContent = String(clockHour12).padStart(2, '0');
+    document.getElementById('clockMinBox').textContent = String(clockMinute).padStart(2, '0');
+    document.getElementById('amBtn').classList.toggle('active', clockAmPm === 'AM');
+    document.getElementById('pmBtn').classList.toggle('active', clockAmPm === 'PM');
+
+    document.querySelectorAll('#wheelHours .wheel-item').forEach(el => {
+      el.classList.toggle('selected', Number(el.dataset.val) === clockHour12);
+    });
+    document.querySelectorAll('#wheelMinutes .wheel-item').forEach(el => {
+      el.classList.toggle('selected', Number(el.dataset.val) === clockMinute);
+    });
+    document.querySelectorAll('#wheelAmPm .wheel-item').forEach(el => {
+      el.classList.toggle('selected', el.dataset.val === clockAmPm);
+    });
+
+    const targetMs = computeTargetTimestamp();
+    const isTomorrow = new Date(targetMs).getDate() !== new Date().getDate();
+    document.getElementById('clockCountdownPill').textContent =
+      `${isTomorrow ? 'Tomorrow' : 'Today'} · ${formatRelativeCountdown(targetMs)}`;
+
+    if (clockMode === 'dial') renderChronoDial();
+  }
+
+  function renderChronoDial() {
+    const svg = document.getElementById('chronoDialSvg');
+    const cx = 112, cy = 112, rOuter = 98, rNum = 78;
+    let ticks = '';
+    for (let i = 0; i < 60; i++) {
+      const ang = (i * 6 - 90) * Math.PI / 180;
+      const isMajor = i % 5 === 0;
+      const r1 = isMajor ? 92 : 95;
+      const x1 = cx + r1 * Math.cos(ang);
+      const y1 = cy + r1 * Math.sin(ang);
+      const x2 = cx + rOuter * Math.cos(ang);
+      const y2 = cy + rOuter * Math.sin(ang);
+      ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--text-tertiary)" stroke-opacity="${isMajor ? 0.55 : 0.25}" stroke-width="${isMajor ? 1.8 : 1}"/>`;
+    }
+
+    const activeVal = dialTarget === 'hour' ? (clockHour12 % 12) * 5 : clockMinute;
+    const handAng = (activeVal * 6 - 90) * Math.PI / 180;
+    const hx = cx + rNum * Math.cos(handAng);
+    const hy = cy + rNum * Math.sin(handAng);
+
+    let nums = '';
+    for (let i = 1; i <= 12; i++) {
+      const val = dialTarget === 'hour' ? i : (i * 5) % 60;
+      const label = dialTarget === 'hour' ? String(i) : String(val).padStart(2, '0');
+      const ang = (i * 30 - 90) * Math.PI / 180;
+      const nx = cx + rNum * Math.cos(ang);
+      const ny = cy + rNum * Math.sin(ang);
+      const isSelected = (dialTarget === 'hour' && i === clockHour12) || (dialTarget === 'minute' && val === clockMinute);
+      nums += `<text x="${nx.toFixed(1)}" y="${(ny + 4).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" fill="${isSelected ? '#FFFFFF' : 'var(--text-primary)'}">${label}</text>`;
+    }
+
+    svg.innerHTML = `
+      <circle cx="${cx}" cy="${cy}" r="104" fill="var(--glass-inset)" stroke="var(--glass-border)" stroke-width="1.5"/>
+      ${ticks}
+      <line x1="${cx}" y1="${cy}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="4.5" fill="#007AFF"/>
+      <circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="16" fill="#007AFF"/>
+      ${nums}
+    `;
+  }
+
+  function initChronoDialPointer() {
+    const svg = document.getElementById('chronoDialSvg');
+    let dragging = false;
+    function handlePointer(e) {
+      const rect = svg.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const dx = clientX - (rect.left + rect.width / 2);
+      const dy = clientY - (rect.top + rect.height / 2);
+      let deg = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+      if (deg < 0) deg += 360;
+      clockPresetExactMs = null;
+      if (dialTarget === 'hour') {
+        let h = Math.round(deg / 30) % 12;
+        if (h === 0) h = 12;
+        clockHour12 = h;
+      } else {
+        clockMinute = Math.round(deg / 6) % 60;
+      }
+      syncClockUI();
+    }
+    svg.addEventListener('pointerdown', e => { dragging = true; handlePointer(e); });
+    window.addEventListener('pointermove', e => { if (dragging) handlePointer(e); });
+    window.addEventListener('pointerup', () => {
+      if (dragging) {
+        dragging = false;
+        if (dialTarget === 'hour') setDialTarget('minute');
+      }
+    });
+  }
+
+  function applyClockPresetSeconds(sec) {
+    const target = new Date(Date.now() + sec * 1000);
+    loadDateIntoClock(target);
+    clockPresetExactMs = target.getTime();
+    syncClockUI();
+  }
+
+  function applyClockPresetMinutes(mins) {
+    const target = new Date(Date.now() + mins * 60 * 1000);
+    loadDateIntoClock(target);
+    clockPresetExactMs = target.getTime();
+    syncClockUI();
+  }
+
+  function applyClockFixed(h12, min, ap) {
+    clockHour12 = h12;
+    clockMinute = min;
+    clockAmPm = ap;
+    clockPresetExactMs = null;
+    scrollWheelTo('wheelHours', h12 - 1);
+    scrollWheelTo('wheelMinutes', min);
+    scrollWheelTo('wheelAmPm', ap === 'AM' ? 0 : 1);
+    syncClockUI();
+  }
+
+  function clearClockSelection() {
+    if (clockContext === 'newTask') {
+      pendingNewTaskReminderAt = null;
+      document.getElementById('newTaskReminderSub').textContent = 'No alert scheduled';
+      document.getElementById('newTaskTimeTrigger').textContent = '🔔 Set Time ⌄';
+      updatePushPreview();
+    } else {
+      const t = state.tasks.find(x => x.id === clockContext);
+      if (t) {
+        t.reminderAt = null;
+        t.notified = false;
+        saveState();
+        renderAll();
+      }
+    }
+    closeSheet('clockPopupOverlay');
+    showIslandMessage('Reminder Cleared');
+  }
+
+  function confirmClockSelection() {
+    const targetMs = computeTargetTimestamp();
+    if (clockContext === 'newTask') {
+      pendingNewTaskReminderAt = targetMs;
+      document.getElementById('newTaskReminderSub').textContent = `Scheduled · ${formatRelativeCountdown(targetMs)}`;
+      document.getElementById('newTaskTimeTrigger').textContent = `🔔 ${formatTime12(targetMs)} ⌄`;
+      updatePushPreview();
+    } else {
+      const t = state.tasks.find(x => x.id === clockContext);
+      if (t) {
+        t.reminderAt = targetMs;
+        t.notified = false;
+        saveState();
+        scheduleNativeAndroidAlarmIfAvailable(t);
+        renderAll();
+        showIslandMessage(`Alert set · ${formatTime12(targetMs)}`);
+      }
+    }
+    closeSheet('clockPopupOverlay');
+    hapticFeedback();
+  }
+
+  // Push Notification Scheduler & Native Android Bridge
+  function scheduleNativeAndroidAlarmIfAvailable(task) {
+    if (!task.reminderAt) return;
+    if (window.AndroidBridge && typeof window.AndroidBridge.scheduleNotification === 'function') {
+      try {
+        const reqCode = Math.abs(task.id.split('').reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)) % 100000;
+        window.AndroidBridge.scheduleNotification(
+          'Daily Flow · ' + task.title,
+          `Scheduled ${task.category} task reminder is due now.`,
+          task.reminderAt,
+          reqCode
+        );
+      } catch (e) {}
+    }
+  }
+
+  function triggerTestAlert5s() {
+    const active = state.tasks.find(t => !t.done);
+    if (active) {
+      active.reminderAt = Date.now() + 5000;
+      active.notified = false;
+      saveState();
+      scheduleNativeAndroidAlarmIfAvailable(active);
+      renderAll();
+      showIslandMessage('Test Push in 5s');
+    } else {
+      const demo = {
+        id: 't_demo_' + Date.now(),
+        title: 'Focus Check-In · Quick Alert',
+        category: 'Focus',
+        priority: 'High',
+        done: false,
+        reminderAt: Date.now() + 5000,
+        notified: false
+      };
+      state.tasks.unshift(demo);
+      saveState();
+      scheduleNativeAndroidAlarmIfAvailable(demo);
+      renderAll();
+      showIslandMessage('Test Push in 5s');
+    }
+    hapticFeedback();
+  }
+
+  function showPushBanner(task) {
+    activePushTaskId = task.id;
+    document.getElementById('pushTitle').textContent = task.title;
+    document.getElementById('pushSub').textContent = `${task.category} · Scheduled for ${formatTime12(task.reminderAt)}`;
+    document.getElementById('pushBanner').classList.add('show');
+    playTone(880, 0.16, 0.08);
+    setTimeout(() => playTone(1174, 0.22, 0.07), 120);
+    hapticFeedback();
+
+    if (window.AndroidBridge && typeof window.AndroidBridge.showImmediateNotification === 'function') {
+      try {
+        window.AndroidBridge.showImmediateNotification('Daily Flow · ' + task.title, 'Scheduled reminder is due now', 777);
+      } catch (e) {}
+    }
+  }
+
+  function completeFromPush() {
+    document.getElementById('pushBanner').classList.remove('show');
+    if (activePushTaskId) {
+      const t = state.tasks.find(x => x.id === activePushTaskId);
+      if (t) {
+        t.done = true;
+        saveState();
+        renderAll();
+        showIslandMessage('Task Completed ✓');
+      }
+    }
+  }
+
+  function snoozeFromPush() {
+    document.getElementById('pushBanner').classList.remove('show');
+    if (activePushTaskId) {
+      const t = state.tasks.find(x => x.id === activePushTaskId);
+      if (t) {
+        t.reminderAt = Date.now() + 5 * 60 * 1000;
+        t.notified = false;
+        saveState();
+        scheduleNativeAndroidAlarmIfAvailable(t);
+        renderAll();
+        showIslandMessage('Snoozed 5m');
+      }
+    }
+  }
+
+  function openRemindersSheet() {
+    const list = document.getElementById('scheduledRemindersList');
+    const scheduled = state.tasks.filter(t => !t.done && t.reminderAt);
+    if (scheduled.length === 0) {
+      list.innerHTML = `<div style="font-size:13px;color:var(--text-secondary);padding:10px 0;">No active reminders scheduled.</div>`;
+    } else {
+      list.innerHTML = scheduled.map(t => `
+        <div class="inset-group" style="margin:0;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:13.5px;font-weight:700;">${escapeHtml(t.title)}</div>
+            <div style="font-size:12px;color:var(--accent-blue);font-weight:600;">🔔 ${formatTime12(t.reminderAt)} · ${formatRelativeCountdown(t.reminderAt)}</div>
+          </div>
+          <button class="time-trigger-btn" onclick="closeSheet('remindersSheet');openClockForTask('${t.id}')">Edit</button>
+        </div>
+      `).join('');
+    }
+    document.getElementById('remindersSheet').classList.add('open');
+  }
+
+  // ==================== HABITS VIEW & CREATOR / DELETION ====================
+  function setHabitFilter(f) {
+    state.habitFilter = f;
+    saveState();
+    renderHabits();
+  }
+
+  function stepHabit(id, delta) {
+    const h = state.habits.find(x => x.id === id);
+    if (!h) return;
+    h.current = Math.max(0, Math.min(h.target, h.current + delta));
+    saveState();
+    renderAll();
+    hapticFeedback();
+    if (h.current === h.target && delta > 0) {
+      showIslandMessage(`${h.name} Complete ✓`);
+    }
+  }
+
+  function renderHabits() {
+    const m = getMetrics();
+    document.getElementById('habitsHeroPct').textContent = `${m.habitPct}%`;
+    document.getElementById('habitsHeroRing').style.strokeDashoffset = 220 - (220 * m.habitPct) / 100;
+    document.getElementById('habitsBestStreak').textContent = `${m.bestStreak}d`;
+    document.getElementById('habitsActiveCount').textContent = `${state.habits.length}`;
+
+    // 7-Day Rhythm Bar: past/future days stay plain/blank (0%); Today (index 4) reflects live habitPct
+    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    document.getElementById('habitsRhythmBars').innerHTML = days.map((d, idx) => {
+      const fillPct = idx === 4 ? m.habitPct : 0;
+      return `
+        <div class="rhythm-col">
+          <div class="rhythm-bar-track">
+            <div class="rhythm-bar-fill" style="height:${fillPct}%"></div>
+          </div>
+          <span class="rhythm-day-lbl">${d}</span>
+        </div>
+      `;
+    }).join('');
+
+    document.querySelectorAll('#habitFilterBar .seg-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.hfilter === state.habitFilter);
+    });
+
+    const filtered = state.habits.filter(h => {
+      const done = h.current >= h.target;
+      if (state.habitFilter === 'active' && done) return false;
+      if (state.habitFilter === 'completed' && !done) return false;
+      return true;
+    });
+
+    const list = document.getElementById('habitsFullList');
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="glass-card empty-state-box"><div class="empty-state-text">No rituals in this view</div></div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(h => {
+      const pct = Math.min(100, Math.round((h.current / Math.max(1, h.target)) * 100));
+      const isDone = h.current >= h.target;
+      // 7-day consistency dots: past/future dots stay blank; Today dot (idx 4) shows blank / half / full green
+      const dotsHtml = [0,1,2,3,4,5,6].map(idx => {
+        const dotH = idx === 4 ? pct : 0;
+        return `<div class="habit-dot"><div class="habit-dot-fill" style="height:${dotH}%"></div></div>`;
+      }).join('');
+
+      return `
+        <div class="glass-card habit-card">
+          <div class="habit-liquid-wash" style="width:${pct}%;background:${h.color};"></div>
+          <div class="habit-card-top">
+            <div class="habit-squircle" style="background:${h.color}1F;color:${h.color};">
+              ${HABIT_ICONS[h.icon] || HABIT_ICONS.drop}
+            </div>
+            <div class="habit-info">
+              <div class="habit-title-row">
+                <span class="habit-name">${escapeHtml(h.name)}</span>
+                <span class="habit-streak-tag">🔥 ${h.streak}d</span>
+              </div>
+              <div class="habit-sub">${h.current} of ${h.target} ${h.unit} · ${pct}%</div>
+            </div>
+            <button class="row-mini-btn" onclick="promptDeleteHabit('${h.id}')" aria-label="Delete Habit">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </div>
+          <div class="habit-card-bottom">
+            <div class="habit-dots-row">${dotsHtml}</div>
+            ${isDone
+              ? `<span class="completed-pill" onclick="stepHabit('${h.id}', -1)">Completed ✓</span>`
+              : `<div class="stepper-pill">
+                   <button class="step-btn" onclick="stepHabit('${h.id}', -1)">−</button>
+                   <span class="step-val">${h.current}/${h.target}</span>
+                   <button class="step-btn" onclick="stepHabit('${h.id}', 1)">+</button>
+                 </div>`
+            }
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openNewHabitSheet() {
+    newHabitTarget = 8;
+    newHabitUnit = 'times';
+    newHabitIcon = 'drop';
+    newHabitColor = '#007AFF';
+    document.getElementById('newHabitNameInput').value = '';
+    document.getElementById('newHabitTargetVal').textContent = '8';
+    selectHabitUnit('times');
+    renderHabitSwatches();
+    document.getElementById('newHabitSheet').classList.add('open');
+  }
+
+  function adjustNewHabitTarget(delta) {
+    newHabitTarget = Math.max(1, Math.min(99, newHabitTarget + delta));
+    document.getElementById('newHabitTargetVal').textContent = String(newHabitTarget);
+  }
+
+  function selectHabitUnit(u) {
+    newHabitUnit = u;
+    document.querySelectorAll('#newHabitUnitChips .choice-chip').forEach(b => {
+      b.classList.toggle('active', b.dataset.unit === u);
+    });
+  }
+
+  function renderHabitSwatches() {
+    document.getElementById('habitIconSwatches').innerHTML = Object.keys(HABIT_ICONS).map(k => `
+      <button type="button" class="icon-choice ${newHabitIcon === k ? 'active' : ''}" onclick="newHabitIcon='${k}';renderHabitSwatches()">
+        ${HABIT_ICONS[k]}
+      </button>
+    `).join('');
+
+    document.getElementById('habitColorSwatches').innerHTML = HABIT_COLORS.map(c => `
+      <button type="button" class="color-swatch ${newHabitColor === c ? 'active' : ''}" style="background:${c};" onclick="newHabitColor='${c}';renderHabitSwatches()"></button>
+    `).join('');
+  }
+
+  function createNewHabit() {
+    const raw = (document.getElementById('newHabitNameInput').value || '').trim();
+    const name = raw || 'Daily Focus Ritual';
+    state.habits.push({
+      id: 'h_' + Date.now(),
+      name,
+      current: 0,
+      target: newHabitTarget,
+      unit: newHabitUnit,
+      streak: 1,
+      icon: newHabitIcon,
+      color: newHabitColor
+    });
+    saveState();
+    closeSheet('newHabitSheet');
+    renderAll();
+    hapticFeedback();
+    showIslandMessage('Ritual Created');
+  }
+
+  function promptDeleteHabit(id) {
+    const h = state.habits.find(x => x.id === id);
+    if (!h) return;
+    habitToDeleteId = id;
+    document.getElementById('deleteHabitDesc').textContent =
+      `Delete "${h.name}"? You can undo immediately from the top bar.`;
+    document.getElementById('deleteHabitSheet').classList.add('open');
+  }
+
+  function confirmDeleteHabit() {
+    if (!habitToDeleteId) return;
+    const idx = state.habits.findIndex(x => x.id === habitToDeleteId);
+    if (idx !== -1) {
+      const [removed] = state.habits.splice(idx, 1);
+      lastDeletedBackup = { type: 'habit', item: removed, index: idx };
+      saveState();
+      renderAll();
+      showIslandMessage('Habit deleted', true);
+    }
+    habitToDeleteId = null;
+    closeSheet('deleteHabitSheet');
+    hapticFeedback();
+  }
+
+  function undoLastDelete() {
+    if (!lastDeletedBackup) return;
+    if (lastDeletedBackup.type === 'habit') {
+      state.habits.splice(lastDeletedBackup.index, 0, lastDeletedBackup.item);
+    } else if (lastDeletedBackup.type === 'task') {
+      state.tasks.splice(lastDeletedBackup.index, 0, lastDeletedBackup.item);
+    }
+    lastDeletedBackup = null;
+    saveState();
+    renderAll();
+    showIslandMessage('Restored ✓');
+  }
+
+  // ==================== NOTES VIEW ====================
+  function setNoteTag(tag) {
+    state.noteTag = tag;
+    saveState();
+    renderNotes();
+  }
+
+  function submitQuickJot(e) {
+    e.preventDefault();
+    const inp = document.getElementById('quickJotInput');
+    const text = (inp.value || '').trim();
+    if (!text) return;
+    addNoteItem(text, 'Thought');
+    inp.value = '';
+  }
+
+  function submitNoteFromTab(e) {
+    e.preventDefault();
+    const inp = document.getElementById('notesTabInput');
+    const text = (inp.value || '').trim();
+    if (!text) return;
+    const tag = state.noteTag === 'All' ? 'Thought' : state.noteTag;
+    addNoteItem(text, tag);
+    inp.value = '';
+  }
+
+  function addNoteItem(text, tag) {
+    state.notes.unshift({
+      id: 'n_' + Date.now(),
+      text,
+      tag,
+      pinned: false,
+      time: formatTime12(Date.now())
+    });
+    saveState();
+    renderAll();
+    hapticFeedback();
+    showIslandMessage('Note Saved');
+  }
+
+  function togglePinNote(id) {
+    const n = state.notes.find(x => x.id === id);
+    if (!n) return;
+    n.pinned = !n.pinned;
+    saveState();
+    renderAll();
+  }
+
+  function deleteNote(id) {
+    state.notes = state.notes.filter(x => x.id !== id);
+    saveState();
+    renderAll();
+    showIslandMessage('Note Deleted');
+  }
+
+  function renderNotes() {
+    document.querySelectorAll('#notesTagRow .tag-chip').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.ntag === state.noteTag);
+    });
+    const q = (document.getElementById('notesSearchInput').value || '').trim().toLowerCase();
+    const sorted = [...state.notes].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+    const filtered = sorted.filter(n => {
+      if (state.noteTag !== 'All' && n.tag !== state.noteTag) return false;
+      if (q && !n.text.toLowerCase().includes(q)) return false;
+      return true;
+    });
+
+    const list = document.getElementById('notesList');
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="glass-card empty-state-box"><div class="empty-state-text">No notes found</div></div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(n => `
+      <div class="glass-card note-card">
+        <div class="note-card-top">
+          <span class="note-tag-badge">${n.pinned ? '📌 ' : ''}${n.tag}</span>
+          <div style="display:flex;gap:4px;">
+            <button class="row-mini-btn" onclick="togglePinNote('${n.id}')">📌</button>
+            <button class="row-mini-btn" onclick="deleteNote('${n.id}')">×</button>
+          </div>
+        </div>
+        <div class="note-body">${escapeHtml(n.text)}</div>
+        <div class="note-time">${n.time}</div>
+      </div>
+    `).join('');
+  }
+
+  // ==================== PROGRESS VIEW (Plain Past/Future; Blank/Half/Full Green Today) ====================
+  function renderProgress() {
+    const m = getMetrics();
+    document.getElementById('flowScoreBadge').textContent = `Today · ${m.flowPct}%`;
+    document.getElementById('heatmapTodayBadge').textContent = `${m.habitPct}% Today`;
+
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    document.getElementById('progressFlowBars').innerHTML = days.map((d, idx) => {
+      const isToday = idx === 4; // Friday
+      const hPx = isToday ? Math.max(12, Math.round((m.flowPct / 100) * 86)) : 12;
+      return `
+        <div class="flow-bar-col">
+          <div class="flow-bar-pill ${isToday ? 'today' : ''}" style="height:${hPx}px;"></div>
+          <span class="flow-bar-lbl">${d}</span>
+        </div>
+      `;
+    }).join('');
+
+    // 28-Day Habit Consistency Grid:
+    // Indices 0..17 = Past dates (plain blank)
+    // Index 18 = Today (0% blank, 1..99% half-green fill, 100% full green)
+    // Indices 19..27 = Future dates (plain blank)
+    const todayIdx = 18;
+    const grid = document.getElementById('heatmapGrid');
+    grid.innerHTML = Array.from({ length: 28 }, (_, idx) => {
+      const isToday = idx === todayIdx;
+      const fillPct = isToday ? m.habitPct : 0;
+      const dayNum = idx + 2; // Nov 2 .. Nov 29
+      return `
+        <div class="heat-cell ${isToday ? 'today-cell' : ''}" onclick="selectHeatmapCell(${idx}, ${dayNum}, ${fillPct})">
+          <div class="heat-fill" style="height:${fillPct}%;"></div>
+        </div>
+      `;
+    }).join('');
+
+    // Daily Balance Donut
+    const totalShare = Math.max(1, m.taskPct + m.habitPct + m.notePct);
+    const tFrac = m.taskPct / totalShare;
+    const hFrac = m.habitPct / totalShare;
+    const nFrac = m.notePct / totalShare;
+    const C = 251.3;
+
+    const dTasks = document.getElementById('donutTasks');
+    const dHabits = document.getElementById('donutHabits');
+    const dNotes = document.getElementById('donutNotes');
+
+    dTasks.style.strokeDasharray = `${(tFrac * C).toFixed(1)} ${C}`;
+    dTasks.style.strokeDashoffset = '0';
+
+    dHabits.style.strokeDasharray = `${(hFrac * C).toFixed(1)} ${C}`;
+    dHabits.style.strokeDashoffset = `${(-tFrac * C).toFixed(1)}`;
+
+    dNotes.style.strokeDasharray = `${(nFrac * C).toFixed(1)} ${C}`;
+    dNotes.style.strokeDashoffset = `${(-(tFrac + hFrac) * C).toFixed(1)}`;
+
+    document.getElementById('balTasksPct').textContent = `${m.taskPct}%`;
+    document.getElementById('balHabitsPct').textContent = `${m.habitPct}%`;
+    document.getElementById('balNotesPct').textContent = `${m.notePct}%`;
+  }
+
+  function selectHeatmapCell(idx, dayNum, fillPct) {
+    selectedHeatmapIdx = idx;
+    const status = idx < 18 ? 'Past · Blank' : idx > 18 ? 'Future · Blank' : `Today · ${fillPct}%`;
+    document.getElementById('heatmapSelectedDayLabel').textContent = `Nov ${dayNum} · ${status}`;
+    hapticFeedback();
+  }
+
+  // Sheet Helpers
+  function closeSheet(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  function closeSheetOnBg(e, id) {
+    if (e.target.id === id) closeSheet(id);
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderAll() {
+    updateLiveClocks();
+    renderWeekRibbon();
+    renderSpotlight();
+    renderBento();
+    renderTodayRituals();
+    renderTasks();
+    renderHabits();
+    renderNotes();
+    renderProgress();
+  }
+
+  // 1-Second Live Scheduler Loop
+  setInterval(() => {
+    updateLiveClocks();
+    const now = Date.now();
+    let changed = false;
+    state.tasks.forEach(t => {
+      if (!t.done && t.reminderAt && !t.notified && t.reminderAt <= now) {
+        t.notified = true;
+        changed = true;
+        showPushBanner(t);
+      }
+    });
+    if (changed) {
+      saveState();
+      renderAll();
+    } else {
+      renderSpotlight();
+      if (document.getElementById('view-today').classList.contains('active')) {
+        renderTasks();
+      }
+    }
+  }, 1000);
+
+  // Bootstrap Immediately
+  applyTheme();
+  initClockWheels();
+  renderAll();
+</script>
+</body>
+</html>
