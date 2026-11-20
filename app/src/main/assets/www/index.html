@@ -948,7 +948,7 @@
   .task-swipe-actions {
     position: absolute;
     inset: 0;
-    z-index: 3;
+    z-index: 1;
     display: flex;
     align-items: stretch;
     justify-content: space-between;
@@ -978,7 +978,7 @@
     flex: 0 0 148px;
     width: 148px;
     position: relative;
-    z-index: 4;
+    z-index: 1;
     pointer-events: auto;
   }
 
@@ -1008,12 +1008,15 @@
   .task-card-surface {
     position: relative;
     z-index: 2;
+    width: 100%;
+    box-sizing: border-box;
     background: var(--task-card-solid);
     padding: 13px 14px;
     display: flex;
     align-items: center;
     gap: 11px;
     transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
   }
 
   .task-check-ring {
@@ -2939,27 +2942,29 @@
     const mToast = document.getElementById('mobileToast');
     const mTxt = document.getElementById('mobileToastText');
 
-    txt.textContent = msg;
-    undoBtn.style.display = withUndo ? 'inline-block' : 'none';
-    island.classList.add('expanded');
-
-    // Show the top-center mobile toast only when a task is created.
-    // Other feedback (delete, complete, reminder changes) stays in the app UI.
-    const showTaskCreatedToast = msg === 'Task Added' || msg.startsWith('Reminder set ·');
-    if (showTaskCreatedToast) {
-      mTxt.textContent = msg;
-      mToast.classList.add('visible');
-    } else {
+    // The top-center notification is reserved exclusively for task creation.
+    const isTaskCreated = msg === 'Task Added' || msg.startsWith('Reminder set ·');
+    clearTimeout(islandTimeout);
+    if (!isTaskCreated) {
+      island.classList.remove('expanded');
+      txt.textContent = 'Daily Flow';
+      undoBtn.style.display = 'none';
       mToast.classList.remove('visible');
+      return;
     }
 
-    clearTimeout(islandTimeout);
+    txt.textContent = msg;
+    undoBtn.style.display = 'none';
+    island.classList.add('expanded');
+    mTxt.textContent = msg;
+    mToast.classList.add('visible');
+
     islandTimeout = setTimeout(() => {
       island.classList.remove('expanded');
       txt.textContent = 'Daily Flow';
       undoBtn.style.display = 'none';
       mToast.classList.remove('visible');
-    }, withUndo ? 4000 : 2200);
+    }, 2200);
   }
 
   // Theme Management
