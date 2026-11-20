@@ -68,12 +68,17 @@ public class MainActivity extends AppCompatActivity {
         // Forward Android status/navigation bar safe-area insets into CSS variables
         ViewCompat.setOnApplyWindowInsetsListener(webView, (v, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets imeInsets = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
+            boolean keyboardVisible = windowInsets.isVisible(WindowInsetsCompat.Type.ime());
             float density = getResources().getDisplayMetrics().density;
             int topDp = Math.round(insets.top / density);
             int bottomDp = Math.round(insets.bottom / density);
+            int imeBottomDp = keyboardVisible ? Math.round(imeInsets.bottom / density) : 0;
             webView.post(() -> webView.evaluateJavascript(
                 "document.documentElement.style.setProperty('--safe-top','" + topDp + "px');" +
-                "document.documentElement.style.setProperty('--safe-bottom','" + bottomDp + "px');",
+                "document.documentElement.style.setProperty('--safe-bottom','" + bottomDp + "px');" +
+                "document.documentElement.style.setProperty('--keyboard-inset','" + imeBottomDp + "px');" +
+                "document.body.classList.toggle('keyboard-open'," + keyboardVisible + ");",
                 null
             ));
             return windowInsets;
