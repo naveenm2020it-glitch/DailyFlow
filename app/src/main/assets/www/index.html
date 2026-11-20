@@ -1541,12 +1541,89 @@
 
   .note-composer-bar input {
     flex: 1;
+    min-width: 0;
     border: none;
     background: transparent;
     color: var(--text-primary);
-    font-size: 13.5px;
+    -webkit-text-fill-color: var(--text-primary);
+    caret-color: var(--accent-blue);
+    opacity: 1;
+    font-size: 15px;
+    line-height: 1.4;
     outline: none;
   }
+
+  .note-composer-bar input::placeholder {
+    color: var(--text-tertiary);
+    -webkit-text-fill-color: var(--text-tertiary);
+    opacity: 1;
+  }
+
+  .note-edit-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 180;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(10, 10, 14, 0.48);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .note-edit-overlay.open { display: flex; }
+  .note-edit-panel {
+    width: 100%;
+    max-height: 88%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 24px;
+    background: var(--glass-bg-elevated);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+  .note-edit-title {
+    font-size: 17px;
+    font-weight: 750;
+    color: var(--text-primary);
+  }
+  .note-edit-textarea {
+    width: 100%;
+    min-height: 150px;
+    max-height: 42vh;
+    resize: vertical;
+    padding: 13px;
+    border: 1px solid var(--glass-hairline);
+    border-radius: 15px;
+    background: var(--glass-inset);
+    color: var(--text-primary);
+    -webkit-text-fill-color: var(--text-primary);
+    caret-color: var(--accent-blue);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.5;
+    outline: none;
+  }
+  .note-edit-textarea:focus {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
+  }
+  .note-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .note-edit-actions button {
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .note-edit-cancel { background: var(--glass-inset); color: var(--text-primary); }
+  .note-edit-save { background: var(--accent-blue); color: #FFF; }
 
   .note-send-btn {
     width: 34px;
@@ -2461,6 +2538,18 @@
     <input type="text" id="notesTabInput" placeholder="Write a quick note..." />
     <button type="submit" class="note-send-btn">↑</button>
   </form>
+
+  <!-- Edit existing note -->
+  <div class="note-edit-overlay" id="noteEditOverlay" onclick="if(event.target===this)closeNoteEditor()">
+    <div class="note-edit-panel" role="dialog" aria-modal="true" aria-labelledby="noteEditTitle">
+      <div class="note-edit-title" id="noteEditTitle">Edit note</div>
+      <textarea class="note-edit-textarea" id="noteEditTextarea" placeholder="Write your note..."></textarea>
+      <div class="note-edit-actions">
+        <button type="button" class="note-edit-cancel" onclick="closeNoteEditor()">Cancel</button>
+        <button type="button" class="note-edit-save" onclick="saveEditedNote()">Save changes</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Floating 4-Tab Glass Dock -->
   <nav class="bottom-dock">
@@ -3943,6 +4032,48 @@
     showIslandMessage('Note Saved');
   }
 
+  function editNote(id) {
+    const note = state.notes.find(x => x.id === id);
+    if (!note) return;
+    window.editingNoteId = id;
+    const overlay = document.getElementById('noteEditOverlay');
+    const editor = document.getElementById('noteEditTextarea');
+    editor.value = note.text || '';
+    overlay.classList.add('open');
+    requestAnimationFrame(() => {
+      editor.focus();
+      const end = editor.value.length;
+      editor.setSelectionRange(end, end);
+    });
+  }
+
+  function closeNoteEditor() {
+    const overlay = document.getElementById('noteEditOverlay');
+    if (overlay) overlay.classList.remove('open');
+    window.editingNoteId = null;
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }
+
+  function saveEditedNote() {
+    const note = state.notes.find(x => x.id === window.editingNoteId);
+    const value = (document.getElementById('noteEditTextarea').value || '').trim();
+    if (!note) {
+      closeNoteEditor();
+      return;
+    }
+    if (!value) {
+      showIslandMessage('Note cannot be empty');
+      return;
+    }
+    note.text = value;
+    note.editedAt = formatTime12(Date.now());
+    saveState();
+    closeNoteEditor();
+    renderAll();
+    showIslandMessage('Note Updated');
+    hapticFeedback();
+  }
+
   function togglePinNote(id) {
     const n = state.notes.find(x => x.id === id);
     if (!n) return;
@@ -3981,8 +4112,9 @@
         <div class="note-card-top">
           <span class="note-tag-badge">${n.pinned ? '📌 ' : ''}${n.tag}</span>
           <div style="display:flex;gap:4px;">
-            <button class="row-mini-btn" onclick="togglePinNote('${n.id}')">📌</button>
-            <button class="row-mini-btn" onclick="deleteNote('${n.id}')">×</button>
+            <button class="row-mini-btn" onclick="editNote('${n.id}')" aria-label="Edit note">✎</button>
+            <button class="row-mini-btn" onclick="togglePinNote('${n.id}')" aria-label="Pin note">📌</button>
+            <button class="row-mini-btn" onclick="deleteNote('${n.id}')" aria-label="Delete note">×</button>
           </div>
         </div>
         <div class="note-body">${escapeHtml(n.text)}</div>
