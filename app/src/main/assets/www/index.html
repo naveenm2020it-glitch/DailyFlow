@@ -197,7 +197,9 @@
 
   /* Mobile Floating Toast for Android APK */
   .mobile-toast {
-    display: none;
+    display: none !important;
+    visibility: hidden;
+    pointer-events: none;
   }
   @media (max-width: 520px) {
     .mobile-toast {
@@ -211,7 +213,9 @@
       border-radius: 999px;
       font-size: 12.5px;
       font-weight: 600;
-      display: flex;
+      display: flex !important;
+      visibility: hidden;
+      pointer-events: none;
       align-items: center;
       gap: 8px;
       z-index: 120;
@@ -219,6 +223,8 @@
       transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .mobile-toast.visible {
+      visibility: visible;
+      pointer-events: none;
       transform: translateX(-50%) translateY(0);
     }
   }
@@ -938,17 +944,19 @@
 
   .task-swipe-wrapper {
     position: relative;
+    isolation: isolate;
     border-radius: 20px;
     overflow: hidden;
     background: var(--task-card-solid);
     box-shadow: var(--glass-shadow);
     border: 1px solid var(--glass-hairline);
+    touch-action: pan-y;
   }
 
   .task-swipe-actions {
     position: absolute;
     inset: 0;
-    z-index: 1;
+    z-index: 0;
     display: flex;
     align-items: stretch;
     justify-content: space-between;
@@ -978,7 +986,7 @@
     flex: 0 0 148px;
     width: 148px;
     position: relative;
-    z-index: 1;
+    z-index: 0;
     pointer-events: auto;
   }
 
@@ -1007,8 +1015,10 @@
 
   .task-card-surface {
     position: relative;
-    z-index: 2;
+    z-index: 1;
+    flex: 0 0 100%;
     width: 100%;
+    min-width: 100%;
     box-sizing: border-box;
     background: var(--task-card-solid);
     padding: 13px 14px;
@@ -2942,7 +2952,7 @@
     const mToast = document.getElementById('mobileToast');
     const mTxt = document.getElementById('mobileToastText');
 
-    // The top-center notification is reserved exclusively for task creation.
+    // Only successful task creation is allowed to show the top-center toast.
     const isTaskCreated = msg === 'Task Added' || msg.startsWith('Reminder set ·');
     clearTimeout(islandTimeout);
     if (!isTaskCreated) {
@@ -3312,41 +3322,68 @@
     }).join('');
   }
 
-  // Swipe Gestures for Task Cards
-  let touchStartX = 0;
-  let touchDeltaX = 0;
+  // Reliable one-row-at-a-time horizontal swipe handling for Android WebView.
+  let taskTouch = { id: null, startX: 0, startY: 0, deltaX: 0, horizontal: false };
+  function closeOtherTaskSwipes(exceptId) {
+    document.querySelectorAll('.task-swipe-wrapper.swiping').forEach(wrap => {
+      if (wrap.id === 'swipe-wrap-' + exceptId) return;
+      wrap.classList.remove('swiping');
+      const surface = wrap.querySelector('.task-card-surface');
+      if (surface) surface.style.transform = 'translate3d(0,0,0)';
+    });
+  }
   function onTaskTouchStart(e, id) {
-    touchStartX = e.touches[0].clientX;
-    touchDeltaX = 0;
+    if (!e.touches || !e.touches.length) return;
+    const touch = e.touches[0];
+    taskTouch = { id, startX: touch.clientX, startY: touch.clientY, deltaX: 0, horizontal: false };
   }
   function onTaskTouchMove(e, id) {
-    touchDeltaX = e.touches[0].clientX - touchStartX;
+    if (!e.touches || !e.touches.length || taskTouch.id !== id) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - taskTouch.startX;
+    const dy = touch.clientY - taskTouch.startY;
+    if (!taskTouch.horizontal && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
+      taskTouch.horizontal = true;
+      closeOtherTaskSwipes(id);
+    }
+    if (!taskTouch.horizontal) return;
+    if (e.cancelable) e.preventDefault();
+    taskTouch.deltaX = dx;
     const wrap = document.getElementById('swipe-wrap-' + id);
     const surf = document.getElementById('swipe-surf-' + id);
     if (!wrap || !surf) return;
-    if (Math.abs(touchDeltaX) > 10) {
-      wrap.classList.add('swiping');
-      const clamped = Math.max(-160, Math.min(110, touchDeltaX));
-      surf.style.transform = `translateX(${clamped}px)`;
-    }
+    wrap.classList.add('swiping');
+    const base = surf.dataset.open === 'true' ? -148 : 0;
+    const next = Math.max(-148, Math.min(0, base + dx));
+    surf.style.transform = 'translate3d(' + next + 'px,0,0)';
   }
   function onTaskTouchEnd(e, id) {
-    // A tap on the revealed Remind/Delete actions must be allowed to reach
-    // the button click handler. Do not close the swipe row on that touchend.
-    if (e.target && e.target.closest && e.target.closest('.task-swipe-actions')) return;
+    if (e.target && e.target.closest && e.target.closest('.swipe-act-btn')) {
+      taskTouch = { id: null, startX: 0, startY: 0, deltaX: 0, horizontal: false };
+      return;
+    }
     const wrap = document.getElementById('swipe-wrap-' + id);
     const surf = document.getElementById('swipe-surf-' + id);
-    if (!wrap || !surf) return;
-    if (touchDeltaX > 78) {
-      surf.style.transform = 'translateX(0px)';
+    if (!wrap || !surf || taskTouch.id !== id) return;
+    const dx = taskTouch.deltaX;
+    if (taskTouch.horizontal && dx < -45) {
+      surf.dataset.open = 'true';
+      surf.style.transform = 'translate3d(-148px,0,0)';
+      wrap.classList.add('swiping');
+    } else if (taskTouch.horizontal && dx > 78) {
+      surf.dataset.open = 'false';
+      surf.style.transform = 'translate3d(0,0,0)';
       wrap.classList.remove('swiping');
       toggleTaskDone(id);
-    } else if (touchDeltaX < -64) {
-      surf.style.transform = 'translateX(-148px)';
-    } else {
-      surf.style.transform = 'translateX(0px)';
+    } else if (taskTouch.horizontal && dx > 25) {
+      surf.dataset.open = 'false';
+      surf.style.transform = 'translate3d(0,0,0)';
+      wrap.classList.remove('swiping');
+    } else if (taskTouch.horizontal && Math.abs(dx) < 25 && surf.dataset.open !== 'true') {
+      surf.style.transform = 'translate3d(0,0,0)';
       wrap.classList.remove('swiping');
     }
+    taskTouch = { id: null, startX: 0, startY: 0, deltaX: 0, horizontal: false };
   }
 
   function toggleTaskDone(id) {
