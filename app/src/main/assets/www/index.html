@@ -986,11 +986,15 @@
     flex: 0 0 148px;
     width: 148px;
     position: relative;
-    z-index: 0;
+    z-index: 4;
     pointer-events: auto;
   }
 
   .swipe-act-btn {
+    position: relative;
+    z-index: 4;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
     flex: 0 0 74px;
     width: 74px;
     min-width: 74px;
@@ -1015,7 +1019,7 @@
 
   .task-card-surface {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     flex: 0 0 100%;
     width: 100%;
     min-width: 100%;
@@ -3292,8 +3296,8 @@
           <div class="task-swipe-actions">
             <div class="swipe-left-bg">✓ Complete</div>
             <div class="swipe-right-btns">
-              <button type="button" class="swipe-act-btn remind" onclick="event.stopPropagation(); openClockForTask('${t.id}')" ontouchend="event.stopPropagation()">Remind</button>
-              <button type="button" class="swipe-act-btn delete" onclick="event.stopPropagation(); deleteTask('${t.id}')" ontouchend="event.stopPropagation()">Delete</button>
+              <button type="button" class="swipe-act-btn remind" onclick="event.preventDefault(); event.stopPropagation(); openClockForTask('${t.id}')">Remind</button>
+              <button type="button" class="swipe-act-btn delete" onclick="event.preventDefault(); event.stopPropagation(); deleteTask('${t.id}')">Delete</button>
             </div>
           </div>
           <div class="task-card-surface" id="swipe-surf-${t.id}">
@@ -3322,68 +3326,53 @@
     }).join('');
   }
 
-  // Reliable one-row-at-a-time horizontal swipe handling for Android WebView.
-  let taskTouch = { id: null, startX: 0, startY: 0, deltaX: 0, horizontal: false };
+  // Keep swipe behavior intentionally simple and consistent with Moneyflow.
+  let taskSwipeStartX = 0;
+  let taskSwipeDeltaX = 0;
+  let taskSwipeId = null;
   function closeOtherTaskSwipes(exceptId) {
     document.querySelectorAll('.task-swipe-wrapper.swiping').forEach(wrap => {
       if (wrap.id === 'swipe-wrap-' + exceptId) return;
       wrap.classList.remove('swiping');
       const surface = wrap.querySelector('.task-card-surface');
-      if (surface) surface.style.transform = 'translate3d(0,0,0)';
+      if (surface) { surface.dataset.open = 'false'; surface.style.transform = 'translateX(0px)'; }
     });
   }
   function onTaskTouchStart(e, id) {
     if (!e.touches || !e.touches.length) return;
-    const touch = e.touches[0];
-    taskTouch = { id, startX: touch.clientX, startY: touch.clientY, deltaX: 0, horizontal: false };
+    taskSwipeId = id; taskSwipeStartX = e.touches[0].clientX; taskSwipeDeltaX = 0;
   }
   function onTaskTouchMove(e, id) {
-    if (!e.touches || !e.touches.length || taskTouch.id !== id) return;
-    const touch = e.touches[0];
-    const dx = touch.clientX - taskTouch.startX;
-    const dy = touch.clientY - taskTouch.startY;
-    if (!taskTouch.horizontal && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
-      taskTouch.horizontal = true;
-      closeOtherTaskSwipes(id);
-    }
-    if (!taskTouch.horizontal) return;
-    if (e.cancelable) e.preventDefault();
-    taskTouch.deltaX = dx;
+    if (!e.touches || !e.touches.length || taskSwipeId !== id) return;
+    taskSwipeDeltaX = e.touches[0].clientX - taskSwipeStartX;
     const wrap = document.getElementById('swipe-wrap-' + id);
     const surf = document.getElementById('swipe-surf-' + id);
-    if (!wrap || !surf) return;
-    wrap.classList.add('swiping');
-    const base = surf.dataset.open === 'true' ? -148 : 0;
-    const next = Math.max(-148, Math.min(0, base + dx));
-    surf.style.transform = 'translate3d(' + next + 'px,0,0)';
+    if (!wrap || !surf || Math.abs(taskSwipeDeltaX) <= 10) return;
+    closeOtherTaskSwipes(id); wrap.classList.add('swiping');
+    const startOffset = surf.dataset.open === 'true' ? -148 : 0;
+    const next = Math.max(-148, Math.min(110, startOffset + taskSwipeDeltaX));
+    surf.style.transform = 'translateX(' + next + 'px)';
   }
   function onTaskTouchEnd(e, id) {
-    if (e.target && e.target.closest && e.target.closest('.swipe-act-btn')) {
-      taskTouch = { id: null, startX: 0, startY: 0, deltaX: 0, horizontal: false };
-      return;
-    }
+    const targetButton = e.target && e.target.closest ? e.target.closest('.swipe-act-btn') : null;
+    if (targetButton) { taskSwipeId = null; taskSwipeDeltaX = 0; return; }
     const wrap = document.getElementById('swipe-wrap-' + id);
     const surf = document.getElementById('swipe-surf-' + id);
-    if (!wrap || !surf || taskTouch.id !== id) return;
-    const dx = taskTouch.deltaX;
-    if (taskTouch.horizontal && dx < -45) {
-      surf.dataset.open = 'true';
-      surf.style.transform = 'translate3d(-148px,0,0)';
-      wrap.classList.add('swiping');
-    } else if (taskTouch.horizontal && dx > 78) {
-      surf.dataset.open = 'false';
-      surf.style.transform = 'translate3d(0,0,0)';
-      wrap.classList.remove('swiping');
-      toggleTaskDone(id);
-    } else if (taskTouch.horizontal && dx > 25) {
-      surf.dataset.open = 'false';
-      surf.style.transform = 'translate3d(0,0,0)';
-      wrap.classList.remove('swiping');
-    } else if (taskTouch.horizontal && Math.abs(dx) < 25 && surf.dataset.open !== 'true') {
-      surf.style.transform = 'translate3d(0,0,0)';
-      wrap.classList.remove('swiping');
+    if (!wrap || !surf || taskSwipeId !== id) return;
+    const wasOpen = surf.dataset.open === 'true';
+    if (wasOpen && taskSwipeDeltaX > 35) {
+      surf.dataset.open = 'false'; surf.style.transform = 'translateX(0px)'; wrap.classList.remove('swiping');
+    } else if (!wasOpen && taskSwipeDeltaX < -64) {
+      surf.dataset.open = 'true'; surf.style.transform = 'translateX(-148px)'; wrap.classList.add('swiping');
+    } else if (!wasOpen && taskSwipeDeltaX > 72) {
+      surf.dataset.open = 'false'; surf.style.transform = 'translateX(0px)'; wrap.classList.remove('swiping'); toggleTaskDone(id);
+    } else if (Math.abs(taskSwipeDeltaX) > 10) {
+      const keepOpen = wasOpen && taskSwipeDeltaX >= -10;
+      surf.dataset.open = keepOpen ? 'true' : 'false';
+      surf.style.transform = keepOpen ? 'translateX(-148px)' : 'translateX(0px)';
+      if (!keepOpen) wrap.classList.remove('swiping');
     }
-    taskTouch = { id: null, startX: 0, startY: 0, deltaX: 0, horizontal: false };
+    taskSwipeId = null; taskSwipeDeltaX = 0;
   }
 
   function toggleTaskDone(id) {
