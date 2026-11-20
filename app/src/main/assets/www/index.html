@@ -1519,11 +1519,14 @@
   }
 
   .note-composer-bar {
-    position: absolute;
+    position: fixed;
     left: 18px;
     right: 18px;
     bottom: calc(var(--safe-bottom) + 84px);
-    z-index: 30;
+    z-index: 220;
+    min-height: 48px;
+    transition: bottom 120ms ease-out;
+    will-change: bottom;
     padding: 6px 7px 6px 14px;
     border-radius: 999px;
     background: var(--glass-bg-elevated);
@@ -1537,6 +1540,12 @@
 
   .note-composer-bar.visible {
     display: flex;
+  }
+
+  /* When Android IME opens, the native bridge supplies its exact inset.
+     Keep the quick-note composer above the keyboard, not underneath it. */
+  body.keyboard-open .note-composer-bar {
+    bottom: calc(var(--keyboard-inset, 0px) + 12px);
   }
 
   .note-composer-bar input {
@@ -4241,6 +4250,21 @@
       }
     }
   }, 1000);
+
+  // Keep the Notes composer visible when the Android keyboard opens.
+  // The native Android bridge sets --keyboard-inset from WindowInsetsCompat IME.
+  (function bindNotesKeyboardLayout() {
+    const notesInput = document.getElementById('notesTabInput');
+    if (!notesInput) return;
+    notesInput.addEventListener('focus', () => {
+      requestAnimationFrame(() => {
+        const composer = document.getElementById('notesComposerBar');
+        if (composer && composer.classList.contains('visible')) {
+          composer.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      });
+    });
+  })();
 
   // Bootstrap Immediately
   applyTheme();
