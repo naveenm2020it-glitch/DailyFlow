@@ -948,6 +948,7 @@
   .task-swipe-actions {
     position: absolute;
     inset: 0;
+    z-index: 3;
     display: flex;
     align-items: stretch;
     justify-content: space-between;
@@ -977,7 +978,8 @@
     flex: 0 0 148px;
     width: 148px;
     position: relative;
-    z-index: 1;
+    z-index: 4;
+    pointer-events: auto;
   }
 
   .swipe-act-btn {
@@ -3268,8 +3270,8 @@
           <div class="task-swipe-actions">
             <div class="swipe-left-bg">✓ Complete</div>
             <div class="swipe-right-btns">
-              <button class="swipe-act-btn remind" onclick="openClockForTask('${t.id}')">Remind</button>
-              <button class="swipe-act-btn delete" onclick="deleteTask('${t.id}')">Delete</button>
+              <button type="button" class="swipe-act-btn remind" onclick="event.stopPropagation(); openClockForTask('${t.id}')" ontouchend="event.stopPropagation()">Remind</button>
+              <button type="button" class="swipe-act-btn delete" onclick="event.stopPropagation(); deleteTask('${t.id}')" ontouchend="event.stopPropagation()">Delete</button>
             </div>
           </div>
           <div class="task-card-surface" id="swipe-surf-${t.id}">
