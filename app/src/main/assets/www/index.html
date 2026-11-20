@@ -2943,8 +2943,15 @@
     undoBtn.style.display = withUndo ? 'inline-block' : 'none';
     island.classList.add('expanded');
 
-    mTxt.textContent = msg;
-    mToast.classList.add('visible');
+    // Show the top-center mobile toast only when a task is created.
+    // Other feedback (delete, complete, reminder changes) stays in the app UI.
+    const showTaskCreatedToast = msg === 'Task Added' || msg.startsWith('Reminder set ·');
+    if (showTaskCreatedToast) {
+      mTxt.textContent = msg;
+      mToast.classList.add('visible');
+    } else {
+      mToast.classList.remove('visible');
+    }
 
     clearTimeout(islandTimeout);
     islandTimeout = setTimeout(() => {
