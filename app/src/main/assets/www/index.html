@@ -2363,6 +2363,55 @@
   .calendar-safe-area{height:2px}
   @media(max-width:360px){.calendar-sheet-overlay .calendar-modal{padding-left:16px;padding-right:16px}.calendar-day{font-size:12px}.calendar-quick-picks{gap:5px}}
   @media(prefers-reduced-motion:reduce){.calendar-modal,.calendar-day,.calendar-nav,.date-trigger-btn,.calendar-sheet-overlay{animation:none;transition:none}}
+
+  /* iOS 26-inspired date selection refinement */
+  .calendar-sheet-overlay{background:rgba(8,14,24,.42);backdrop-filter:blur(14px) saturate(125%);-webkit-backdrop-filter:blur(14px) saturate(125%)}
+  .calendar-sheet-overlay .calendar-modal{
+    width:min(100%,460px);padding:9px 23px calc(22px + env(safe-area-inset-bottom));
+    border-radius:34px 34px 0 0;
+    background:color-mix(in srgb,var(--glass-bg-elevated) 88%,rgba(245,248,255,.22));
+    border:1px solid rgba(255,255,255,.58);border-bottom:0;
+    box-shadow:0 -22px 70px rgba(13,27,48,.24),inset 0 1px 0 rgba(255,255,255,.76);
+    backdrop-filter:blur(48px) saturate(205%);-webkit-backdrop-filter:blur(48px) saturate(205%);
+  }
+  .calendar-sheet-grabber{width:38px;height:5px;border-radius:99px;background:currentColor;opacity:.19;margin:3px auto 21px}
+  .calendar-modal-top{margin-bottom:13px}
+  .calendar-eyebrow{font-size:9px;letter-spacing:.17em;font-weight:850}
+  .calendar-modal-title{font-size:27px;line-height:1.12;letter-spacing:-.06em;font-weight:850}
+  .calendar-close{width:36px;height:36px;border:1px solid rgba(120,130,145,.10);background:rgba(120,130,145,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.32)}
+  .calendar-large-date{align-items:center;gap:10px;padding:5px 2px 16px}
+  .calendar-large-date span{font-size:15px;font-weight:760}
+  .calendar-large-date strong{font-size:35px;letter-spacing:-.07em}
+  .calendar-large-date small{font-size:12px;font-weight:650}
+  .calendar-quick-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:17px}
+  .calendar-quick-picks button{min-height:38px;border-radius:13px;background:rgba(120,130,145,.085);border:1px solid rgba(120,130,145,.10);font-size:11px;font-weight:760;transition:background .16s ease,transform .16s ease,color .16s ease}
+  .calendar-quick-picks button.active{background:rgba(0,122,255,.13);border-color:rgba(0,122,255,.22);color:var(--accent-blue);box-shadow:inset 0 1px 0 rgba(255,255,255,.38)}
+  .calendar-month-row{margin-bottom:11px;padding:0 1px}
+  .calendar-month-row strong{font-size:16px;font-weight:820;letter-spacing:-.035em}
+  .calendar-nav{width:36px;height:36px;border-radius:50%;font-size:23px;background:rgba(120,130,145,.10);border:1px solid rgba(120,130,145,.10)}
+  .calendar-weekdays,.calendar-days{gap:5px}
+  .calendar-weekdays{margin-bottom:7px}
+  .calendar-weekdays span{font-size:10px;font-weight:820;letter-spacing:.025em}
+  .calendar-day{width:100%;min-height:39px;aspect-ratio:1;border-radius:50%;font-size:13px;font-weight:650}
+  .calendar-day.outside{opacity:.16}
+  .calendar-day.today:not(.selected){background:rgba(0,122,255,.075);box-shadow:inset 0 0 0 1.4px rgba(0,122,255,.55);color:var(--accent-blue);font-weight:850}
+  .calendar-day.selected{border-radius:50%;background:var(--accent-blue);color:#fff;font-weight:850;box-shadow:0 5px 14px rgba(0,122,255,.27),inset 0 1px 0 rgba(255,255,255,.25)}
+  .calendar-day:focus-visible,.calendar-nav:focus-visible,.calendar-close:focus-visible,.calendar-quick-picks button:focus-visible{outline:2px solid var(--accent-blue);outline-offset:3px}
+  .calendar-footer{margin-top:13px;padding-top:13px;border-top:1px solid var(--glass-hairline);gap:10px}
+  .calendar-today-btn,.calendar-done-btn{height:47px;border-radius:16px;font-size:13px;font-weight:820}
+  .calendar-today-btn{flex:1;background:rgba(0,122,255,.085);border:1px solid rgba(0,122,255,.10)}
+  .calendar-done-btn{flex:1.5}
+  .calendar-safe-area{height:env(safe-area-inset-bottom)}
+  @media(max-width:380px){
+    .calendar-sheet-overlay .calendar-modal{padding-left:17px;padding-right:17px}
+    .calendar-days,.calendar-weekdays{gap:3px}
+    .calendar-day{min-height:35px;font-size:12px}
+    .calendar-large-date strong{font-size:32px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .calendar-sheet-overlay .calendar-modal,.calendar-day,.calendar-nav,.calendar-quick-picks button{animation:none!important;transition:none!important}
+  }
+
 </style>
 </head>
 <body>
@@ -3732,6 +3781,12 @@
     if (selectedLabel) selectedLabel.textContent = selectedDate.getDate();
     if (selectedWeekday) selectedWeekday.textContent = calendarDraftDate === todayKey ? 'Today' : selectedDate.toLocaleDateString(undefined,{weekday:'long'});
     if (selectedMonth) selectedMonth.textContent = selectedDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+    const quickDates = [0,1,7].map(offset => { const d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+offset); return localDateKey(d); });
+    document.querySelectorAll('.calendar-quick-picks button').forEach((button,index)=>{
+      const active = quickDates[index] === calendarDraftDate;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
     grid.innerHTML = Array.from({length:42},(_,i)=>{
       const d = new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
       const key = localDateKey(d), outside = d.getMonth()!==calendarMonthCursor.getMonth();
