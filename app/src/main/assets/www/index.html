@@ -3011,6 +3011,7 @@
   let calendarDraftDate = selectedTaskDate;
   let calendarMonthCursor = new Date(new Date().getFullYear(),new Date().getMonth(),1);
   let calendarContext = 'newTask';
+  let clockTargetDateKey = localDateKey(new Date());
   let newTaskCat = 'Work';
   let newTaskPrio = 'None';
   let newHabitTarget = 8;
@@ -3733,7 +3734,9 @@
 
   function openClockForNewTask() {
     clockContext = 'newTask';
-    const base = pendingNewTaskReminderAt ? new Date(pendingNewTaskReminderAt) : new Date(Date.now() + 15 * 60 * 1000);
+    clockTargetDateKey = selectedTaskDate;
+    const targetDate = parseLocalDate(clockTargetDateKey);
+    const base = pendingNewTaskReminderAt ? new Date(pendingNewTaskReminderAt) : (clockTargetDateKey === localDateKey(new Date()) ? new Date(Date.now() + 15 * 60 * 1000) : new Date(targetDate.getFullYear(),targetDate.getMonth(),targetDate.getDate(),9,15));
     loadDateIntoClock(base);
     document.getElementById('clockPopupOverlay').classList.add('open');
   }
@@ -3741,7 +3744,9 @@
   function openClockForTask(taskId) {
     clockContext = taskId;
     const t = state.tasks.find(x => x.id === taskId);
-    const base = (t && t.reminderAt) ? new Date(t.reminderAt) : new Date(Date.now() + 15 * 60 * 1000);
+    clockTargetDateKey = t && t.taskDate ? t.taskDate : localDateKey(new Date());
+    const targetDate = parseLocalDate(clockTargetDateKey);
+    const base = (t && t.reminderAt) ? new Date(t.reminderAt) : (clockTargetDateKey === localDateKey(new Date()) ? new Date(Date.now() + 15 * 60 * 1000) : new Date(targetDate.getFullYear(),targetDate.getMonth(),targetDate.getDate(),9,15));
     loadDateIntoClock(base);
     document.getElementById('clockPopupOverlay').classList.add('open');
   }
@@ -3789,10 +3794,9 @@
     const now = new Date();
     let h24 = clockHour12 % 12;
     if (clockAmPm === 'PM') h24 += 12;
-    const candidate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h24, clockMinute, 0, 0);
-    if (candidate.getTime() <= now.getTime()) {
-      candidate.setDate(candidate.getDate() + 1);
-    }
+    const targetDate = parseLocalDate(clockTargetDateKey || localDateKey(now));
+    const candidate = new Date(targetDate.getFullYear(),targetDate.getMonth(),targetDate.getDate(),h24,clockMinute,0,0);
+    if (clockTargetDateKey === localDateKey(now) && candidate.getTime() <= now.getTime()) candidate.setDate(candidate.getDate()+1);
     return candidate.getTime();
   }
 
@@ -3813,9 +3817,8 @@
     });
 
     const targetMs = computeTargetTimestamp();
-    const isTomorrow = new Date(targetMs).getDate() !== new Date().getDate();
     document.getElementById('clockCountdownPill').textContent =
-      `${isTomorrow ? 'Tomorrow' : 'Today'} · ${formatRelativeCountdown(targetMs)}`;
+      `${formatTaskDate(localDateKey(new Date(targetMs)))} · ${formatRelativeCountdown(targetMs)}`;
 
     if (clockMode === 'dial') renderChronoDial();
   }
@@ -3900,7 +3903,11 @@
   }
 
   function applyClockPresetMinutes(mins) {
-    const target = new Date(Date.now() + mins * 60 * 1000);
+    const now = new Date();
+    const selected = parseLocalDate(clockTargetDateKey || localDateKey(now));
+    const target = clockTargetDateKey === localDateKey(now)
+      ? new Date(Date.now() + mins * 60 * 1000)
+      : new Date(selected.getFullYear(),selected.getMonth(),selected.getDate(),9,0,0,0 + mins * 60 * 1000);
     loadDateIntoClock(target);
     clockPresetExactMs = target.getTime();
     syncClockUI();
