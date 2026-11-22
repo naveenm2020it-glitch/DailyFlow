@@ -2910,8 +2910,12 @@
   }
 
   function getHabitProgress(habit, key = localDateKey(new Date())) {
-    const value = habit.dailyLogs && Object.prototype.hasOwnProperty.call(habit.dailyLogs,key)
-      ? Number(habit.dailyLogs[key]) : (key === localDateKey(new Date()) ? Number(habit.current)||0 : 0);
+    let value = 0;
+    if (habit.dailyLogs && typeof habit.dailyLogs === 'object') {
+      value = Object.prototype.hasOwnProperty.call(habit.dailyLogs,key) ? Number(habit.dailyLogs[key]) : 0;
+    } else if (key === localDateKey(new Date())) {
+      value = Number(habit.current) || 0;
+    }
     return Math.max(0,Math.min(Number(habit.target)||1,Number.isFinite(value)?value:0));
   }
 
