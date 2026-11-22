@@ -3932,7 +3932,13 @@
     // 7-Day Rhythm Bar: past/future days stay plain/blank (0%); Today (index 4) reflects live habitPct
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     document.getElementById('habitsRhythmBars').innerHTML = days.map((d, idx) => {
-      const fillPct = idx === 4 ? m.habitPct : 0;
+      const date = new Date();
+      date.setHours(0,0,0,0);
+      date.setDate(date.getDate()-((date.getDay()+6)%7)+idx);
+      const key = localDateKey(date);
+      const due = state.habits.filter(h=>h.scheduleDays.includes(date.getDay()));
+      const completed = due.filter(h=>getHabitProgress(h,key)>=h.target).length;
+      const fillPct = due.length ? Math.round(completed/due.length*100) : 0;
       return `
         <div class="rhythm-col">
           <div class="rhythm-bar-track">
@@ -3961,12 +3967,18 @@
     }
 
     list.innerHTML = filtered.map(h => {
-      const pct = Math.min(100, Math.round((h.current / Math.max(1, h.target)) * 100));
-      const isDone = h.current >= h.target;
-      // 7-day consistency dots: past/future dots stay blank; Today dot (idx 4) shows blank / half / full green
-      const dotsHtml = [0,1,2,3,4,5,6].map(idx => {
-        const dotH = idx === 4 ? pct : 0;
-        return `<div class="habit-dot"><div class="habit-dot-fill" style="height:${dotH}%"></div></div>`;
+      const today = new Date();
+      const todayKey = localDateKey(today);
+      const todayProgress = getHabitProgress(h,todayKey);
+      h.current = todayProgress;
+      const pct = Math.min(100,Math.round(todayProgress/Math.max(1,h.target)*100));
+      const isDone = todayProgress >= h.target;
+      const dotsHtml = Array.from({length:7},(_,idx)=>{
+        const date = new Date(today.getFullYear(),today.getMonth(),today.getDate()-((today.getDay()+6)%7)+idx);
+        const key = localDateKey(date);
+        const dayPct = Math.min(100,Math.round(getHabitProgress(h,key)/Math.max(1,h.target)*100));
+        const scheduled = h.scheduleDays.includes(date.getDay());
+        return `<div class="habit-dot" title="${date.toLocaleDateString()} · ${dayPct}%${scheduled?'':' · Rest day'}"><div class="habit-dot-fill" style="height:${dayPct}%"></div></div>`;
       }).join('');
 
       return `
@@ -3981,7 +3993,7 @@
                 <span class="habit-name">${escapeHtml(h.name)}</span>
                 <span class="habit-streak-tag">🔥 ${h.streak}d</span>
               </div>
-              <div class="habit-sub">${h.current} of ${h.target} ${h.unit} · ${pct}%</div>
+              <div class="habit-sub">${todayProgress} of ${h.target} ${h.unit} · ${pct}% today · ${h.scheduleDays.length}/7 days</div>
             </div>
             <button class="row-mini-btn" onclick="promptDeleteHabit('${h.id}')" aria-label="Delete Habit">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
@@ -4256,7 +4268,7 @@
 
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     document.getElementById('progressFlowBars').innerHTML = days.map((d, idx) => {
-      const isToday = idx === 4; // Friday
+      const isToday = idx === ((new Date().getDay()+6)%7);
       const hPx = isToday ? Math.max(12, Math.round((m.flowPct / 100) * 86)) : 12;
       return `
         <div class="flow-bar-col">
@@ -4266,22 +4278,20 @@
       `;
     }).join('');
 
-    // 28-Day Habit Consistency Grid:
-    // Indices 0..17 = Past dates (plain blank)
-    // Index 18 = Today (0% blank, 1..99% half-green fill, 100% full green)
-    // Indices 19..27 = Future dates (plain blank)
-    const todayIdx = 18;
+    const today = new Date();
+    const todayKey = localDateKey(today);
     const grid = document.getElementById('heatmapGrid');
-    grid.innerHTML = Array.from({ length: 28 }, (_, idx) => {
-      const isToday = idx === todayIdx;
-      const fillPct = isToday ? m.habitPct : 0;
-      const dayNum = idx + 2; // Nov 2 .. Nov 29
-      return `
-        <div class="heat-cell ${isToday ? 'today-cell' : ''}" onclick="selectHeatmapCell(${idx}, ${dayNum}, ${fillPct})">
-          <div class="heat-fill" style="height:${fillPct}%;"></div>
-        </div>
-      `;
+    grid.innerHTML = Array.from({length:28},(_,idx)=>{
+      const date = new Date(today.getFullYear(),today.getMonth(),today.getDate()-(27-idx));
+      const key = localDateKey(date);
+      const due = state.habits.filter(h=>h.scheduleDays.includes(date.getDay()));
+      const completed = due.filter(h=>getHabitProgress(h,key)>=h.target).length;
+      const fillPct = due.length ? Math.round(completed/due.length*100) : 0;
+      const isToday = key === todayKey;
+      return `<div class="heat-cell ${isToday?'today-cell':''}" role="button" tabindex="0" title="${date.toLocaleDateString()} · ${fillPct}%"
+        onclick="selectHeatmapCell(${idx}, '${key}', ${fillPct})"><div class="heat-fill" style="height:${fillPct}%;"></div></div>`;
     }).join('');
+    document.getElementById('heatmapSelectedDayLabel').textContent = 'Last 28 days · Select a day';
 
     // Daily Balance Donut
     const totalShare = Math.max(1, m.taskPct + m.habitPct);
@@ -4302,10 +4312,11 @@
     document.getElementById('balHabitsPct').textContent = `${m.habitPct}%`;
   }
 
-  function selectHeatmapCell(idx, dayNum, fillPct) {
+  function selectHeatmapCell(idx, dateKey, fillPct) {
     selectedHeatmapIdx = idx;
-    const status = idx < 18 ? 'Past · Blank' : idx > 18 ? 'Future · Blank' : `Today · ${fillPct}%`;
-    document.getElementById('heatmapSelectedDayLabel').textContent = `Nov ${dayNum} · ${status}`;
+    const [y,m,d] = dateKey.split('-').map(Number);
+    const date = new Date(y,m-1,d);
+    document.getElementById('heatmapSelectedDayLabel').textContent = `${date.toLocaleDateString(undefined,{month:'short',day:'numeric'})} · ${fillPct}% completed`;
     hapticFeedback();
   }
 
