@@ -3958,6 +3958,7 @@
       `;
     }).join('');
 
+    state.habits.forEach(h => { h.current = getHabitProgress(h, localDateKey(new Date())); });
     document.querySelectorAll('#habitFilterBar .seg-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.hfilter === state.habitFilter);
     });
