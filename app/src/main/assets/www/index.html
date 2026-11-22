@@ -2762,6 +2762,12 @@
       </div>
 
       <div class="inset-group">
+        <label class="inset-label">Days per week</label>
+        <div class="chip-grid" id="habitScheduleDays"></div>
+        <div class="view-sub" id="habitScheduleSummary" style="margin-top:7px;">Every day</div>
+      </div>
+
+      <div class="inset-group">
         <label class="inset-label">Icon & Accent</label>
         <div class="swatch-row" id="habitIconSwatches" style="margin-bottom:10px;"></div>
         <div class="swatch-row" id="habitColorSwatches"></div>
@@ -2899,12 +2905,46 @@
     SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
   }
 
+  function localDateKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  }
+
+  function getHabitProgress(habit, key = localDateKey(new Date())) {
+    const value = habit.dailyLogs && Object.prototype.hasOwnProperty.call(habit.dailyLogs,key)
+      ? Number(habit.dailyLogs[key]) : (key === localDateKey(new Date()) ? Number(habit.current)||0 : 0);
+    return Math.max(0,Math.min(Number(habit.target)||1,Number.isFinite(value)?value:0));
+  }
+
+  function migrateHabitHistory() {
+    if (!Array.isArray(state.habits)) state.habits = [];
+    const now = new Date();
+    const monday = new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
+    state.habits.forEach(h => {
+      if (!h.dailyLogs || typeof h.dailyLogs !== 'object' || Array.isArray(h.dailyLogs)) {
+        h.dailyLogs = {};
+        const legacy = Math.max(0,Number(h.current)||0);
+        if (legacy > 0) {
+          const idx = Number.isInteger(state.selectedDayIndex) ? Math.max(0,Math.min(6,state.selectedDayIndex)) : ((now.getDay()+6)%7);
+          const oldDate = new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+idx);
+          if (oldDate > now) oldDate.setDate(oldDate.getDate()-7);
+          h.dailyLogs[localDateKey(oldDate)] = Math.min(Number(h.target)||legacy,legacy);
+        }
+      }
+      if (!Array.isArray(h.scheduleDays)) h.scheduleDays = [0,1,2,3,4,5,6];
+      h.scheduleDays = [...new Set(h.scheduleDays.map(Number).filter(d=>Number.isInteger(d)&&d>=0&&d<=6))];
+      h.current = getHabitProgress(h,localDateKey(now));
+    });
+  }
+
+  migrateHabitHistory();
+
   // Transient UI state
   let pendingNewTaskReminderAt = null;
   let newTaskCat = 'Work';
   let newTaskPrio = 'None';
   let newHabitTarget = 8;
   let newHabitUnit = 'times';
+  let newHabitScheduleDays = [0,1,2,3,4,5,6];
   let newHabitIcon = 'drop';
   let newHabitColor = '#007AFF';
   let habitToDeleteId = null;
@@ -3870,7 +3910,10 @@
   function stepHabit(id, delta) {
     const h = state.habits.find(x => x.id === id);
     if (!h) return;
-    h.current = Math.max(0, Math.min(h.target, h.current + delta));
+    const key = localDateKey(new Date());
+    if (!h.dailyLogs) h.dailyLogs = {};
+    h.current = Math.max(0,Math.min(h.target,getHabitProgress(h,key)+delta));
+    h.dailyLogs[key] = h.current;
     saveState();
     renderAll();
     hapticFeedback();
@@ -3963,12 +4006,14 @@
   function openNewHabitSheet() {
     newHabitTarget = 8;
     newHabitUnit = 'times';
+    newHabitScheduleDays = [0,1,2,3,4,5,6];
     newHabitIcon = 'drop';
     newHabitColor = '#007AFF';
     document.getElementById('newHabitNameInput').value = '';
     document.getElementById('newHabitTargetVal').textContent = '8';
     selectHabitUnit('times');
     renderHabitSwatches();
+    renderHabitScheduleDays();
     document.getElementById('newHabitSheet').classList.add('open');
   }
 
@@ -3996,6 +4041,23 @@
     `).join('');
   }
 
+  function toggleHabitScheduleDay(day) {
+    const d = Number(day);
+    if (newHabitScheduleDays.includes(d)) {
+      if (newHabitScheduleDays.length === 1) return;
+      newHabitScheduleDays = newHabitScheduleDays.filter(x=>x!==d);
+    } else newHabitScheduleDays = [...newHabitScheduleDays,d].sort((a,b)=>a-b);
+    renderHabitScheduleDays();
+  }
+
+  function renderHabitScheduleDays() {
+    const days = [{d:1,l:'Mon'},{d:2,l:'Tue'},{d:3,l:'Wed'},{d:4,l:'Thu'},{d:5,l:'Fri'},{d:6,l:'Sat'},{d:0,l:'Sun'}];
+    const el = document.getElementById('habitScheduleDays');
+    if (!el) return;
+    el.innerHTML = days.map(x=>`<button type="button" class="choice-chip ${newHabitScheduleDays.includes(x.d)?'active':''}" aria-pressed="${newHabitScheduleDays.includes(x.d)}" onclick="toggleHabitScheduleDay(${x.d})">${x.l}</button>`).join('');
+    document.getElementById('habitScheduleSummary').textContent = newHabitScheduleDays.length===7?'Every day':`${newHabitScheduleDays.length} days per week`;
+  }
+
   function createNewHabit() {
     const raw = (document.getElementById('newHabitNameInput').value || '').trim();
     const name = raw || 'Daily Focus Ritual';
@@ -4003,6 +4065,8 @@
       id: 'h_' + Date.now(),
       name,
       current: 0,
+      dailyLogs: {},
+      scheduleDays: [...newHabitScheduleDays],
       target: newHabitTarget,
       unit: newHabitUnit,
       streak: 1,
