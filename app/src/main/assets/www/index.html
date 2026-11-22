@@ -3640,7 +3640,7 @@
       const d = new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
       const key = localDateKey(d), outside = d.getMonth()!==calendarMonthCursor.getMonth();
       const selected = key===calendarDraftDate, today = key===todayKey;
-      return \`<button type="button" class="calendar-day \${outside?'outside':''} \${selected?'selected':''} \${today?'today':''}" aria-label="\${d.toLocaleDateString()}" aria-pressed="\${selected}" onclick="chooseCalendarDay('\${key}')">\${d.getDate()}</button>\`;
+      return `<button type="button" class="calendar-day ${outside?'outside':''} ${selected?'selected':''} ${today?'today':''}" aria-label="${d.toLocaleDateString()}" aria-pressed="${selected}" onclick="chooseCalendarDay('${key}')">${d.getDate()}</button>`;
     }).join('');
   }
   function chooseCalendarDay(key) {
