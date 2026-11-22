@@ -2329,8 +2329,40 @@
   .calendar-done-btn{flex:1;box-shadow:0 7px 17px rgba(0,122,255,.25)}
   .date-trigger-btn{min-height:54px;border-radius:17px;padding:10px 13px;background:linear-gradient(120deg,rgba(0,122,255,.065),var(--glass-inset));transition:border-color .18s ease,transform .18s ease}
   .date-trigger-btn:active{transform:scale(.985);border-color:var(--accent-blue)}
-  @media(max-width:360px){.calendar-modal{padding:17px 14px 14px}.calendar-day{min-height:35px}.calendar-weekdays,.calendar-days{gap:3px}}
-  @media(prefers-reduced-motion:reduce){.calendar-modal,.calendar-day,.calendar-nav,.date-trigger-btn{animation:none;transition:none}}
+  /* Modern iOS calendar sheet refinement */
+  .calendar-sheet-overlay{align-items:flex-end!important;justify-content:center!important;padding:0!important;background:rgba(8,16,28,.34);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+  .calendar-sheet-overlay.open{animation:calendarBackdropIn .22s ease both}
+  @keyframes calendarBackdropIn{from{opacity:0}to{opacity:1}}
+  .calendar-sheet-overlay .calendar-modal{width:min(100%,440px);max-width:440px;max-height:min(88dvh,760px);overflow-y:auto;overscroll-behavior:contain;padding:10px 22px calc(18px + env(safe-area-inset-bottom));border-radius:30px 30px 0 0;background:color-mix(in srgb,var(--glass-bg-elevated) 94%,transparent);border:1px solid rgba(255,255,255,.48);border-bottom:0;box-shadow:0 -16px 60px rgba(15,28,48,.20),inset 0 1px 0 rgba(255,255,255,.7);backdrop-filter:blur(42px) saturate(190%);-webkit-backdrop-filter:blur(42px) saturate(190%);animation:calendarSheetUp .32s cubic-bezier(.2,.8,.2,1)}
+  @keyframes calendarSheetUp{from{transform:translateY(35px);opacity:.7}to{transform:translateY(0);opacity:1}}
+  .calendar-sheet-grabber{width:38px;height:5px;border-radius:99px;background:var(--text-tertiary);opacity:.35;margin:2px auto 18px}
+  .calendar-modal-top{margin-bottom:14px}
+  .calendar-modal-title{font-size:25px;letter-spacing:-.055em}
+  .calendar-close{width:34px;height:34px;background:rgba(120,130,145,.13);font-size:20px}
+  .calendar-large-date{display:flex;align-items:baseline;gap:8px;padding:2px 1px 13px}
+  .calendar-large-date span{font-size:16px;font-weight:750;letter-spacing:-.02em;color:var(--text-primary)}
+  .calendar-large-date strong{font-size:32px;line-height:1;font-weight:850;letter-spacing:-.06em;color:var(--accent-blue)}
+  .calendar-large-date small{font-size:12px;font-weight:650;color:var(--text-secondary)}
+  .calendar-quick-picks{display:flex;gap:8px;margin:0 0 17px}
+  .calendar-quick-picks button{flex:1;min-height:35px;border:1px solid rgba(120,130,145,.12);border-radius:999px;background:rgba(120,130,145,.09);color:var(--text-secondary);font-size:11px;font-weight:750}
+  .calendar-quick-picks button:active{background:rgba(0,122,255,.14);color:var(--accent-blue);transform:scale(.97)}
+  .calendar-month-row{margin:0 0 10px;padding:0 1px}
+  .calendar-month-row strong{font-size:15px}
+  .calendar-nav{width:34px;height:34px;border-radius:50%;background:rgba(120,130,145,.10);font-size:22px}
+  .calendar-weekdays,.calendar-days{gap:4px}
+  .calendar-weekdays{margin-bottom:5px}
+  .calendar-weekdays span{font-size:10px;font-weight:800}
+  .calendar-day{aspect-ratio:1;min-height:0;border-radius:50%;font-size:13px;font-weight:650}
+  .calendar-day.outside{opacity:.18}
+  .calendar-day.today:not(.selected){background:rgba(0,122,255,.08);box-shadow:inset 0 0 0 1.3px rgba(0,122,255,.45);color:var(--accent-blue)}
+  .calendar-day.selected{border-radius:50%;background:var(--accent-blue);color:#fff;box-shadow:0 4px 12px rgba(0,122,255,.25)}
+  .calendar-footer{border-top:1px solid var(--glass-hairline);padding-top:13px;margin-top:14px;gap:10px}
+  .calendar-today-btn,.calendar-done-btn{height:46px;border-radius:15px}
+  .calendar-today-btn{flex:1}
+  .calendar-done-btn{flex:1.5}
+  .calendar-safe-area{height:2px}
+  @media(max-width:360px){.calendar-sheet-overlay .calendar-modal{padding-left:16px;padding-right:16px}.calendar-day{font-size:12px}.calendar-quick-picks{gap:5px}}
+  @media(prefers-reduced-motion:reduce){.calendar-modal,.calendar-day,.calendar-nav,.date-trigger-btn,.calendar-sheet-overlay{animation:none;transition:none}}
 </style>
 </head>
 <body>
@@ -2741,15 +2773,36 @@
     </div>
   </div>
 
-  <!-- APPLE STYLE TASK CALENDAR -->
-  <div class="sheet-overlay center" id="taskCalendarOverlay" onclick="closeSheetOnBg(event, 'taskCalendarOverlay')">
+  <!-- iOS-inspired task date calendar sheet -->
+  <div class="sheet-overlay calendar-sheet-overlay" id="taskCalendarOverlay" onclick="closeSheetOnBg(event, 'taskCalendarOverlay')">
     <div class="calendar-modal" role="dialog" aria-modal="true" aria-labelledby="calendarMonthTitle">
-      <div class="calendar-modal-top"><div><div class="calendar-eyebrow">SCHEDULE TASK</div><div class="calendar-modal-title">Choose a date</div></div><button class="calendar-close" onclick="closeSheet('taskCalendarOverlay')" aria-label="Close calendar">×</button></div>
-      <div class="calendar-month-row"><button class="calendar-nav" onclick="changeCalendarMonth(-1)" aria-label="Previous month">‹</button><strong id="calendarMonthTitle">November 2026</strong><button class="calendar-nav" onclick="changeCalendarMonth(1)" aria-label="Next month">›</button></div>
-      <div class="calendar-selection-preview" aria-live="polite"><span class="calendar-preview-icon">✓</span><span><small>SELECTED DATE</small><strong id="calendarSelectedDate">Today</strong></span><span class="calendar-preview-year" id="calendarSelectedYear"></span></div>
-      <div class="calendar-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+      <div class="calendar-sheet-grabber"></div>
+      <div class="calendar-modal-top">
+        <div><div class="calendar-eyebrow">PLAN YOUR DAY</div><div class="calendar-modal-title">Choose a date</div></div>
+        <button class="calendar-close" onclick="closeSheet('taskCalendarOverlay')" aria-label="Close calendar">×</button>
+      </div>
+      <div class="calendar-large-date" aria-live="polite">
+        <span id="calendarSelectedWeekday">Friday</span>
+        <strong id="calendarSelectedDate">20</strong>
+        <small id="calendarSelectedMonth">November 2026</small>
+      </div>
+      <div class="calendar-quick-picks" aria-label="Quick date choices">
+        <button type="button" onclick="chooseCalendarQuickDate(0)">Today</button>
+        <button type="button" onclick="chooseCalendarQuickDate(1)">Tomorrow</button>
+        <button type="button" onclick="chooseCalendarQuickDate(7)">Next week</button>
+      </div>
+      <div class="calendar-month-row">
+        <button class="calendar-nav" onclick="changeCalendarMonth(-1)" aria-label="Previous month">‹</button>
+        <strong id="calendarMonthTitle">November 2026</strong>
+        <button class="calendar-nav" onclick="changeCalendarMonth(1)" aria-label="Next month">›</button>
+      </div>
+      <div class="calendar-weekdays"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
       <div class="calendar-days" id="taskCalendarDays"></div>
-      <div class="calendar-footer"><button class="calendar-today-btn" onclick="calendarChooseToday()">Today</button><button class="calendar-done-btn" onclick="confirmCalendarDate()">Done</button></div>
+      <div class="calendar-footer">
+        <button class="calendar-today-btn" onclick="calendarChooseToday()">Today</button>
+        <button class="calendar-done-btn" onclick="confirmCalendarDate()">Done</button>
+      </div>
+      <div class="calendar-safe-area"></div>
     </div>
   </div>
 
@@ -3674,15 +3727,25 @@
     const todayKey = localDateKey(new Date());
     const selectedDate = parseLocalDate(calendarDraftDate);
     const selectedLabel = document.getElementById('calendarSelectedDate');
-    const selectedYear = document.getElementById('calendarSelectedYear');
-    if (selectedLabel) selectedLabel.textContent = calendarDraftDate === todayKey ? 'Today · ' + selectedDate.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}) : selectedDate.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
-    if (selectedYear) selectedYear.textContent = selectedDate.getFullYear();
+    const selectedWeekday = document.getElementById('calendarSelectedWeekday');
+    const selectedMonth = document.getElementById('calendarSelectedMonth');
+    if (selectedLabel) selectedLabel.textContent = selectedDate.getDate();
+    if (selectedWeekday) selectedWeekday.textContent = calendarDraftDate === todayKey ? 'Today' : selectedDate.toLocaleDateString(undefined,{weekday:'long'});
+    if (selectedMonth) selectedMonth.textContent = selectedDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});
     grid.innerHTML = Array.from({length:42},(_,i)=>{
       const d = new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
       const key = localDateKey(d), outside = d.getMonth()!==calendarMonthCursor.getMonth();
       const selected = key===calendarDraftDate, today = key===todayKey;
       return `<button type="button" class="calendar-day ${outside?'outside':''} ${selected?'selected':''} ${today?'today':''}" aria-label="${d.toLocaleDateString()}" aria-pressed="${selected}" onclick="chooseCalendarDay('${key}')">${d.getDate()}</button>`;
     }).join('');
+  }
+  function chooseCalendarQuickDate(offsetDays) {
+    const today = new Date();
+    const date = new Date(today.getFullYear(),today.getMonth(),today.getDate()+offsetDays);
+    calendarDraftDate = localDateKey(date);
+    calendarMonthCursor = new Date(date.getFullYear(),date.getMonth(),1);
+    renderTaskCalendar();
+    hapticFeedback();
   }
   function chooseCalendarDay(key) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return;
