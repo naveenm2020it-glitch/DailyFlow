@@ -2271,6 +2271,32 @@
     border-color: var(--accent-blue);
     color: var(--accent-blue);
   }
+
+  .date-trigger-btn{width:100%;display:flex;align-items:center;gap:11px;padding:12px 14px;border:1px solid var(--glass-hairline);border-radius:15px;background:var(--glass-inset);color:var(--text-primary);font-size:14px;font-weight:650;text-align:left}
+  .date-trigger-icon{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(0,122,255,.13);color:var(--accent-blue);font-size:19px}
+  .date-trigger-chevron{margin-left:auto;color:var(--text-tertiary);font-size:20px}
+  .calendar-modal{width:min(350px,calc(100vw - 38px));padding:19px 18px 16px;border:1px solid var(--glass-border);border-radius:30px;background:var(--glass-bg-elevated);box-shadow:0 24px 80px rgba(0,0,0,.28);backdrop-filter:blur(34px);-webkit-backdrop-filter:blur(34px);color:var(--text-primary);animation:calendarPop .24s cubic-bezier(.2,.8,.2,1)}
+  @keyframes calendarPop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+  .calendar-modal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:17px}
+  .calendar-eyebrow{font-size:9px;letter-spacing:.12em;font-weight:800;color:var(--accent-blue);margin-bottom:4px}
+  .calendar-modal-title{font-size:21px;font-weight:780;letter-spacing:-.04em}
+  .calendar-close{width:30px;height:30px;border:0;border-radius:50%;background:var(--glass-inset);color:var(--text-secondary);font-size:22px;line-height:1}
+  .calendar-month-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+  .calendar-month-row strong{font-size:15px;font-weight:750}
+  .calendar-nav{width:34px;height:34px;border:0;border-radius:50%;background:var(--glass-inset);color:var(--accent-blue);font-size:24px;line-height:1}
+  .calendar-weekdays,.calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+  .calendar-weekdays{margin-bottom:7px}
+  .calendar-weekdays span{text-align:center;color:var(--text-tertiary);font-size:10px;font-weight:750;padding:5px 0}
+  .calendar-day{aspect-ratio:1;border:0;border-radius:50%;background:transparent;color:var(--text-primary);font-size:13px;font-weight:600;display:grid;place-items:center;position:relative}
+  .calendar-day.outside{color:var(--text-tertiary);opacity:.45}
+  .calendar-day.today:not(.selected){color:var(--accent-blue);box-shadow:inset 0 0 0 1.5px var(--accent-blue)}
+  .calendar-day.selected{background:var(--accent-blue);color:#fff;box-shadow:0 5px 14px rgba(0,122,255,.28)}
+  .calendar-day:active{transform:scale(.92)}
+  .calendar-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--glass-hairline);padding-top:14px;margin-top:15px}
+  .calendar-today-btn,.calendar-done-btn{border:0;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:750}
+  .calendar-today-btn{background:var(--glass-inset);color:var(--accent-blue)}
+  .calendar-done-btn{background:var(--accent-blue);color:white;min-width:106px;box-shadow:0 5px 14px rgba(0,122,255,.22)}
+
 </style>
 </head>
 <body>
@@ -2420,7 +2446,7 @@
 
       <!-- Today's Tasks -->
       <div class="section-head">
-        <h2 class="section-title">Today's Tasks</h2>
+        <h2 class="section-title" id="taskSectionTitle">Today's Tasks</h2>
         <span class="section-hint">Swipe cards left/right</span>
       </div>
 
@@ -2632,6 +2658,10 @@
       </div>
 
       <div class="inset-group">
+        <label class="inset-label">Plan for date</label>
+        <button type="button" class="date-trigger-btn" id="newTaskDateTrigger" onclick="openTaskCalendar('newTask')"><span class="date-trigger-icon">▦</span><span id="newTaskDateLabel">Today</span><span class="date-trigger-chevron">⌄</span></button>
+      </div>
+      <div class="inset-group">
         <div class="reminder-trigger-row">
           <div>
             <span class="inset-label" style="margin-bottom:2px;">Time Reminder</span>
@@ -2674,6 +2704,17 @@
       </div>
 
       <button class="sheet-submit-btn" onclick="createNewTask()">Add Task</button>
+    </div>
+  </div>
+
+  <!-- APPLE STYLE TASK CALENDAR -->
+  <div class="sheet-overlay center" id="taskCalendarOverlay" onclick="closeSheetOnBg(event, 'taskCalendarOverlay')">
+    <div class="calendar-modal" role="dialog" aria-modal="true" aria-labelledby="calendarMonthTitle">
+      <div class="calendar-modal-top"><div><div class="calendar-eyebrow">SCHEDULE TASK</div><div class="calendar-modal-title">Choose a date</div></div><button class="calendar-close" onclick="closeSheet('taskCalendarOverlay')" aria-label="Close calendar">×</button></div>
+      <div class="calendar-month-row"><button class="calendar-nav" onclick="changeCalendarMonth(-1)" aria-label="Previous month">‹</button><strong id="calendarMonthTitle">November 2026</strong><button class="calendar-nav" onclick="changeCalendarMonth(1)" aria-label="Next month">›</button></div>
+      <div class="calendar-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+      <div class="calendar-days" id="taskCalendarDays"></div>
+      <div class="calendar-footer"><button class="calendar-today-btn" onclick="calendarChooseToday()">Today</button><button class="calendar-done-btn" onclick="confirmCalendarDate()">Done</button></div>
     </div>
   </div>
 
@@ -2911,6 +2952,15 @@
   if (!Array.isArray(state.habits)) state.habits = [];
   if (!Array.isArray(state.notes)) state.notes = [];
   if (state.theme !== 'dark') state.theme = 'light';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(state.selectedDate || '')) state.selectedDate = localDateKey(new Date());
+  state.selectedDayIndex = (new Date(state.selectedDate + 'T12:00:00').getDay()+6)%7;
+  state.tasks = state.tasks.filter(t=>t && typeof t==='object' && !Array.isArray(t)).map(t=>{
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t.taskDate || '')) t.taskDate = state.selectedDate;
+    t.title = String(t.title || 'Untitled task').slice(0,160);
+    t.category = ['Work','Personal','Wellness','Focus'].includes(t.category) ? t.category : 'Work';
+    t.priority = ['None','Low','Medium','High','Urgent'].includes(t.priority) ? t.priority : 'None';
+    return t;
+  });
 
   function localDateKey(date) {
     return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
@@ -2928,7 +2978,7 @@
 
   function migrateHabitHistory() {
     if (!Array.isArray(state.habits)) state.habits = [];
-    const now = new Date();
+    const now = new Date(state.selectedDate + 'T12:00:00');
     const monday = new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
     state.habits = state.habits.filter(h => h && typeof h === 'object' && !Array.isArray(h));
     state.habits.forEach(h => {
@@ -2957,6 +3007,10 @@
 
   // Transient UI state
   let pendingNewTaskReminderAt = null;
+  let selectedTaskDate = localDateKey(new Date());
+  let calendarDraftDate = selectedTaskDate;
+  let calendarMonthCursor = new Date(new Date().getFullYear(),new Date().getMonth(),1);
+  let calendarContext = 'newTask';
   let newTaskCat = 'Work';
   let newTaskPrio = 'None';
   let newHabitTarget = 8;
@@ -3180,9 +3234,14 @@
   }
 
   function selectWeekDay(idx) {
+    const selected = new Date(state.selectedDate + 'T12:00:00');
+    const monday = new Date(selected.getFullYear(),selected.getMonth(),selected.getDate()-((selected.getDay()+6)%7));
+    const date = new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+idx);
     state.selectedDayIndex = idx;
+    state.selectedDate = localDateKey(date);
+    selectedTaskDate = state.selectedDate;
     saveState();
-    renderWeekRibbon();
+    renderAll();
     hapticFeedback();
   }
 
@@ -3308,10 +3367,14 @@
   }
 
   function renderTasks() {
-    const allCount = state.tasks.length;
-    const schedCount = state.tasks.filter(t => !t.done && t.reminderAt).length;
-    const focusCount = state.tasks.filter(t => !t.done && (t.priority === 'High' || t.priority === 'Urgent')).length;
-    const doneCount = state.tasks.filter(t => t.done).length;
+    const dateTasks = state.tasks.filter(t => (t.taskDate || localDateKey(new Date())) === state.selectedDate);
+    const allCount = dateTasks.length;
+    const schedCount = dateTasks.filter(t => !t.done && t.reminderAt).length;
+    const focusCount = dateTasks.filter(t => !t.done && (t.priority === 'High' || t.priority === 'Urgent')).length;
+    const doneCount = dateTasks.filter(t => t.done).length;
+    const selectedDateObj = new Date(state.selectedDate + 'T12:00:00');
+    const isToday = state.selectedDate === localDateKey(new Date());
+    document.getElementById('taskSectionTitle').textContent = isToday ? "Today's Tasks" : 'Tasks · ' + selectedDateObj.toLocaleDateString(undefined,{month:'short',day:'numeric'});
 
     const filterBtns = document.querySelectorAll('#taskFilterBar .seg-btn');
     filterBtns.forEach(btn => {
@@ -3324,7 +3387,7 @@
     });
 
     const query = (document.getElementById('taskSearchInput').value || '').trim().toLowerCase();
-    const filtered = state.tasks.filter(t => {
+    const filtered = dateTasks.filter(t => {
       if (state.taskFilter === 'scheduled' && (t.done || !t.reminderAt)) return false;
       if (state.taskFilter === 'focus' && (t.done || (t.priority !== 'High' && t.priority !== 'Urgent'))) return false;
       if (state.taskFilter === 'done' && !t.done) return false;
@@ -3461,10 +3524,12 @@
 
   // New Task Sheet Logic
   function openNewTaskSheet() {
+    selectedTaskDate = state.selectedDate || localDateKey(new Date());
     pendingNewTaskReminderAt = null;
     newTaskCat = 'Work';
     newTaskPrio = 'None';
     document.getElementById('newTaskTitleInput').value = '';
+    updateNewTaskDateLabel();
     document.getElementById('newTaskReminderSub').textContent = 'No alert scheduled';
     document.getElementById('newTaskTimeTrigger').textContent = '🔔 Set Time ⌄';
     selectNewTaskCat('Work');
@@ -3514,10 +3579,13 @@
       title,
       category: newTaskCat,
       priority: newTaskPrio,
+      taskDate: selectedTaskDate,
       done: false,
       reminderAt: pendingNewTaskReminderAt,
       notified: false
     };
+    state.selectedDate = selectedTaskDate;
+    state.selectedDayIndex = (new Date(selectedTaskDate + 'T12:00:00').getDay()+6)%7;
     state.tasks.unshift(newTask);
     saveState();
     scheduleNativeAndroidAlarmIfAvailable(newTask);
