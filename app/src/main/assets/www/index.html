@@ -2906,6 +2906,12 @@
     SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
   }
 
+  if (!state || typeof state !== 'object' || Array.isArray(state)) state = getDefaultState();
+  if (!Array.isArray(state.tasks)) state.tasks = [];
+  if (!Array.isArray(state.habits)) state.habits = [];
+  if (!Array.isArray(state.notes)) state.notes = [];
+  if (state.theme !== 'dark') state.theme = 'light';
+
   function localDateKey(date) {
     return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
   }
@@ -2924,7 +2930,12 @@
     if (!Array.isArray(state.habits)) state.habits = [];
     const now = new Date();
     const monday = new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
+    state.habits = state.habits.filter(h => h && typeof h === 'object' && !Array.isArray(h));
     state.habits.forEach(h => {
+      h.target = Math.max(1, Math.min(999, Math.floor(Number(h.target) || 1)));
+      h.name = String(h.name || 'Untitled habit').slice(0, 80);
+      if (!HABIT_COLORS.includes(h.color)) h.color = '#007AFF';
+      if (!Object.prototype.hasOwnProperty.call(HABIT_ICONS, h.icon)) h.icon = 'drop';
       if (!h.dailyLogs || typeof h.dailyLogs !== 'object' || Array.isArray(h.dailyLogs)) {
         h.dailyLogs = {};
         const legacy = Math.max(0,Number(h.current)||0);
@@ -4091,7 +4102,7 @@
       scheduleDays: [...newHabitScheduleDays],
       target: newHabitTarget,
       unit: newHabitUnit,
-      streak: 1,
+      streak: 0,
       icon: newHabitIcon,
       color: newHabitColor
     });
