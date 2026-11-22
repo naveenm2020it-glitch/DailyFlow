@@ -2298,6 +2298,39 @@
   .calendar-done-btn{background:var(--accent-blue);color:white;min-width:106px;box-shadow:0 5px 14px rgba(0,122,255,.22)}
 
   .task-calendar-link{border:0;background:var(--glass-inset);color:var(--accent-blue);border-radius:999px;padding:7px 11px;font-size:11.5px;font-weight:750;white-space:nowrap}
+  /* Refined iOS-inspired calendar picker */
+  .calendar-modal{width:min(372px,calc(100vw - 32px));padding:20px 19px 17px;border-radius:32px;background:color-mix(in srgb,var(--glass-bg-elevated) 90%,transparent);border:1px solid rgba(255,255,255,.42);box-shadow:0 28px 90px rgba(15,28,48,.30),inset 0 1px 0 rgba(255,255,255,.58);backdrop-filter:blur(42px) saturate(185%);-webkit-backdrop-filter:blur(42px) saturate(185%)}
+  .calendar-modal-top{margin-bottom:15px}
+  .calendar-eyebrow{font-size:9px;letter-spacing:.15em;font-weight:850;color:var(--accent-blue)}
+  .calendar-modal-title{font-size:23px;letter-spacing:-.055em;font-weight:820}
+  .calendar-close{width:34px;height:34px;border-radius:50%;font-size:21px;background:rgba(120,130,145,.12);display:grid;place-items:center}
+  .calendar-month-row{margin:0 0 12px;padding:5px 2px}
+  .calendar-month-row strong{font-size:17px;font-weight:800;letter-spacing:-.025em}
+  .calendar-nav{width:38px;height:38px;border-radius:50%;font-size:25px;background:rgba(120,130,145,.11);border:1px solid rgba(120,130,145,.08);display:grid;place-items:center;transition:transform .16s ease,background .16s ease}
+  .calendar-nav:active{transform:scale(.9);background:rgba(0,122,255,.16)}
+  .calendar-selection-preview{display:flex;align-items:center;gap:11px;padding:11px 13px;margin:0 0 15px;border-radius:18px;background:linear-gradient(115deg,rgba(0,122,255,.12),rgba(90,170,255,.045));border:1px solid rgba(0,122,255,.12)}
+  .calendar-preview-icon{width:32px;height:32px;flex:0 0 32px;border-radius:11px;display:grid;place-items:center;background:var(--accent-blue);color:#fff;font-size:15px;font-weight:850;box-shadow:0 4px 12px rgba(0,122,255,.22)}
+  .calendar-selection-preview>span:nth-child(2){display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+  .calendar-selection-preview small{font-size:8px;letter-spacing:.13em;font-weight:850;color:var(--text-tertiary)}
+  .calendar-selection-preview strong{font-size:13px;font-weight:800;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .calendar-preview-year{font-size:11px;font-weight:700;color:var(--text-secondary)}
+  .calendar-weekdays,.calendar-days{gap:4px}
+  .calendar-weekdays{margin-bottom:8px}
+  .calendar-weekdays span{text-align:center;font-size:10px;font-weight:850;letter-spacing:.02em;padding:5px 0;color:var(--text-tertiary)}
+  .calendar-day{aspect-ratio:1;border-radius:14px;font-size:13px;font-weight:650;transition:background .16s ease,transform .16s ease,color .16s ease;min-height:39px}
+  .calendar-day.outside{opacity:.28}
+  .calendar-day.today:not(.selected){color:var(--accent-blue);background:rgba(0,122,255,.075);box-shadow:inset 0 0 0 1.3px rgba(0,122,255,.55);font-weight:800}
+  .calendar-day.selected{border-radius:14px;background:var(--accent-blue);color:#fff;font-weight:850;box-shadow:0 5px 13px rgba(0,122,255,.28),inset 0 1px 0 rgba(255,255,255,.22)}
+  .calendar-day.selected.today{outline:2px solid rgba(0,122,255,.25);outline-offset:2px}
+  .calendar-day:focus-visible,.calendar-nav:focus-visible,.calendar-close:focus-visible{outline:2px solid var(--accent-blue);outline-offset:2px}
+  .calendar-footer{border-top:0;padding-top:4px;margin-top:12px;gap:10px}
+  .calendar-today-btn,.calendar-done-btn{height:44px;padding:0 20px;border-radius:15px;font-size:13px;font-weight:800}
+  .calendar-today-btn{background:rgba(0,122,255,.09);border:1px solid rgba(0,122,255,.10)}
+  .calendar-done-btn{flex:1;box-shadow:0 7px 17px rgba(0,122,255,.25)}
+  .date-trigger-btn{min-height:54px;border-radius:17px;padding:10px 13px;background:linear-gradient(120deg,rgba(0,122,255,.065),var(--glass-inset));transition:border-color .18s ease,transform .18s ease}
+  .date-trigger-btn:active{transform:scale(.985);border-color:var(--accent-blue)}
+  @media(max-width:360px){.calendar-modal{padding:17px 14px 14px}.calendar-day{min-height:35px}.calendar-weekdays,.calendar-days{gap:3px}}
+  @media(prefers-reduced-motion:reduce){.calendar-modal,.calendar-day,.calendar-nav,.date-trigger-btn{animation:none;transition:none}}
 </style>
 </head>
 <body>
@@ -2713,6 +2746,7 @@
     <div class="calendar-modal" role="dialog" aria-modal="true" aria-labelledby="calendarMonthTitle">
       <div class="calendar-modal-top"><div><div class="calendar-eyebrow">SCHEDULE TASK</div><div class="calendar-modal-title">Choose a date</div></div><button class="calendar-close" onclick="closeSheet('taskCalendarOverlay')" aria-label="Close calendar">×</button></div>
       <div class="calendar-month-row"><button class="calendar-nav" onclick="changeCalendarMonth(-1)" aria-label="Previous month">‹</button><strong id="calendarMonthTitle">November 2026</strong><button class="calendar-nav" onclick="changeCalendarMonth(1)" aria-label="Next month">›</button></div>
+      <div class="calendar-selection-preview" aria-live="polite"><span class="calendar-preview-icon">✓</span><span><small>SELECTED DATE</small><strong id="calendarSelectedDate">Today</strong></span><span class="calendar-preview-year" id="calendarSelectedYear"></span></div>
       <div class="calendar-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
       <div class="calendar-days" id="taskCalendarDays"></div>
       <div class="calendar-footer"><button class="calendar-today-btn" onclick="calendarChooseToday()">Today</button><button class="calendar-done-btn" onclick="confirmCalendarDate()">Done</button></div>
@@ -3638,6 +3672,11 @@
     const startOffset = (first.getDay()+6)%7;
     const start = new Date(first.getFullYear(),first.getMonth(),1-startOffset);
     const todayKey = localDateKey(new Date());
+    const selectedDate = parseLocalDate(calendarDraftDate);
+    const selectedLabel = document.getElementById('calendarSelectedDate');
+    const selectedYear = document.getElementById('calendarSelectedYear');
+    if (selectedLabel) selectedLabel.textContent = calendarDraftDate === todayKey ? 'Today · ' + selectedDate.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}) : selectedDate.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+    if (selectedYear) selectedYear.textContent = selectedDate.getFullYear();
     grid.innerHTML = Array.from({length:42},(_,i)=>{
       const d = new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
       const key = localDateKey(d), outside = d.getMonth()!==calendarMonthCursor.getMonth();
