@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
 <title>Daily Flow — iOS 27.3 Liquid Glass</title>
 <style>
   :root {
@@ -2270,6 +2271,147 @@
     border-color: var(--accent-blue);
     color: var(--accent-blue);
   }
+
+  .date-trigger-btn{width:100%;display:flex;align-items:center;gap:11px;padding:12px 14px;border:1px solid var(--glass-hairline);border-radius:15px;background:var(--glass-inset);color:var(--text-primary);font-size:14px;font-weight:650;text-align:left}
+  .date-trigger-icon{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(0,122,255,.13);color:var(--accent-blue);font-size:19px}
+  .date-trigger-chevron{margin-left:auto;color:var(--text-tertiary);font-size:20px}
+  .calendar-modal{width:min(350px,calc(100vw - 38px));padding:19px 18px 16px;border:1px solid var(--glass-border);border-radius:30px;background:var(--glass-bg-elevated);box-shadow:0 24px 80px rgba(0,0,0,.28);backdrop-filter:blur(34px);-webkit-backdrop-filter:blur(34px);color:var(--text-primary);animation:calendarPop .24s cubic-bezier(.2,.8,.2,1)}
+  @keyframes calendarPop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+  .calendar-modal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:17px}
+  .calendar-eyebrow{font-size:9px;letter-spacing:.12em;font-weight:800;color:var(--accent-blue);margin-bottom:4px}
+  .calendar-modal-title{font-size:21px;font-weight:780;letter-spacing:-.04em}
+  .calendar-close{width:30px;height:30px;border:0;border-radius:50%;background:var(--glass-inset);color:var(--text-secondary);font-size:22px;line-height:1}
+  .calendar-month-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+  .calendar-month-row strong{font-size:15px;font-weight:750}
+  .calendar-nav{width:34px;height:34px;border:0;border-radius:50%;background:var(--glass-inset);color:var(--accent-blue);font-size:24px;line-height:1}
+  .calendar-weekdays,.calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+  .calendar-weekdays{margin-bottom:7px}
+  .calendar-weekdays span{text-align:center;color:var(--text-tertiary);font-size:10px;font-weight:750;padding:5px 0}
+  .calendar-day{aspect-ratio:1;border:0;border-radius:50%;background:transparent;color:var(--text-primary);font-size:13px;font-weight:600;display:grid;place-items:center;position:relative}
+  .calendar-day.outside{color:var(--text-tertiary);opacity:.45}
+  .calendar-day.today:not(.selected){color:var(--accent-blue);box-shadow:inset 0 0 0 1.5px var(--accent-blue)}
+  .calendar-day.selected{background:var(--accent-blue);color:#fff;box-shadow:0 5px 14px rgba(0,122,255,.28)}
+  .calendar-day:active{transform:scale(.92)}
+  .calendar-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--glass-hairline);padding-top:14px;margin-top:15px}
+  .calendar-today-btn,.calendar-done-btn{border:0;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:750}
+  .calendar-today-btn{background:var(--glass-inset);color:var(--accent-blue)}
+  .calendar-done-btn{background:var(--accent-blue);color:white;min-width:106px;box-shadow:0 5px 14px rgba(0,122,255,.22)}
+
+  .task-calendar-link{border:0;background:var(--glass-inset);color:var(--accent-blue);border-radius:999px;padding:7px 11px;font-size:11.5px;font-weight:750;white-space:nowrap}
+  /* Refined iOS-inspired calendar picker */
+  .calendar-modal{width:min(372px,calc(100vw - 32px));padding:20px 19px 17px;border-radius:32px;background:color-mix(in srgb,var(--glass-bg-elevated) 90%,transparent);border:1px solid rgba(255,255,255,.42);box-shadow:0 28px 90px rgba(15,28,48,.30),inset 0 1px 0 rgba(255,255,255,.58);backdrop-filter:blur(42px) saturate(185%);-webkit-backdrop-filter:blur(42px) saturate(185%)}
+  .calendar-modal-top{margin-bottom:15px}
+  .calendar-eyebrow{font-size:9px;letter-spacing:.15em;font-weight:850;color:var(--accent-blue)}
+  .calendar-modal-title{font-size:23px;letter-spacing:-.055em;font-weight:820}
+  .calendar-close{width:34px;height:34px;border-radius:50%;font-size:21px;background:rgba(120,130,145,.12);display:grid;place-items:center}
+  .calendar-month-row{margin:0 0 12px;padding:5px 2px}
+  .calendar-month-row strong{font-size:17px;font-weight:800;letter-spacing:-.025em}
+  .calendar-nav{width:38px;height:38px;border-radius:50%;font-size:25px;background:rgba(120,130,145,.11);border:1px solid rgba(120,130,145,.08);display:grid;place-items:center;transition:transform .16s ease,background .16s ease}
+  .calendar-nav:active{transform:scale(.9);background:rgba(0,122,255,.16)}
+  .calendar-selection-preview{display:flex;align-items:center;gap:11px;padding:11px 13px;margin:0 0 15px;border-radius:18px;background:linear-gradient(115deg,rgba(0,122,255,.12),rgba(90,170,255,.045));border:1px solid rgba(0,122,255,.12)}
+  .calendar-preview-icon{width:32px;height:32px;flex:0 0 32px;border-radius:11px;display:grid;place-items:center;background:var(--accent-blue);color:#fff;font-size:15px;font-weight:850;box-shadow:0 4px 12px rgba(0,122,255,.22)}
+  .calendar-selection-preview>span:nth-child(2){display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+  .calendar-selection-preview small{font-size:8px;letter-spacing:.13em;font-weight:850;color:var(--text-tertiary)}
+  .calendar-selection-preview strong{font-size:13px;font-weight:800;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .calendar-preview-year{font-size:11px;font-weight:700;color:var(--text-secondary)}
+  .calendar-weekdays,.calendar-days{gap:4px}
+  .calendar-weekdays{margin-bottom:8px}
+  .calendar-weekdays span{text-align:center;font-size:10px;font-weight:850;letter-spacing:.02em;padding:5px 0;color:var(--text-tertiary)}
+  .calendar-day{aspect-ratio:1;border-radius:14px;font-size:13px;font-weight:650;transition:background .16s ease,transform .16s ease,color .16s ease;min-height:39px}
+  .calendar-day.outside{opacity:.28}
+  .calendar-day.today:not(.selected){color:var(--accent-blue);background:rgba(0,122,255,.075);box-shadow:inset 0 0 0 1.3px rgba(0,122,255,.55);font-weight:800}
+  .calendar-day.selected{border-radius:14px;background:var(--accent-blue);color:#fff;font-weight:850;box-shadow:0 5px 13px rgba(0,122,255,.28),inset 0 1px 0 rgba(255,255,255,.22)}
+  .calendar-day.selected.today{outline:2px solid rgba(0,122,255,.25);outline-offset:2px}
+  .calendar-day:focus-visible,.calendar-nav:focus-visible,.calendar-close:focus-visible{outline:2px solid var(--accent-blue);outline-offset:2px}
+  .calendar-footer{border-top:0;padding-top:4px;margin-top:12px;gap:10px}
+  .calendar-today-btn,.calendar-done-btn{height:44px;padding:0 20px;border-radius:15px;font-size:13px;font-weight:800}
+  .calendar-today-btn{background:rgba(0,122,255,.09);border:1px solid rgba(0,122,255,.10)}
+  .calendar-done-btn{flex:1;box-shadow:0 7px 17px rgba(0,122,255,.25)}
+  .date-trigger-btn{min-height:54px;border-radius:17px;padding:10px 13px;background:linear-gradient(120deg,rgba(0,122,255,.065),var(--glass-inset));transition:border-color .18s ease,transform .18s ease}
+  .date-trigger-btn:active{transform:scale(.985);border-color:var(--accent-blue)}
+  /* Modern iOS calendar sheet refinement */
+  .calendar-sheet-overlay{align-items:flex-end!important;justify-content:center!important;padding:0!important;background:rgba(8,16,28,.34);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+  .calendar-sheet-overlay.open{animation:calendarBackdropIn .22s ease both}
+  @keyframes calendarBackdropIn{from{opacity:0}to{opacity:1}}
+  .calendar-sheet-overlay .calendar-modal{width:min(100%,440px);max-width:440px;max-height:min(88dvh,760px);overflow-y:auto;overscroll-behavior:contain;padding:10px 22px calc(18px + env(safe-area-inset-bottom));border-radius:30px 30px 0 0;background:color-mix(in srgb,var(--glass-bg-elevated) 94%,transparent);border:1px solid rgba(255,255,255,.48);border-bottom:0;box-shadow:0 -16px 60px rgba(15,28,48,.20),inset 0 1px 0 rgba(255,255,255,.7);backdrop-filter:blur(42px) saturate(190%);-webkit-backdrop-filter:blur(42px) saturate(190%);animation:calendarSheetUp .32s cubic-bezier(.2,.8,.2,1)}
+  @keyframes calendarSheetUp{from{transform:translateY(35px);opacity:.7}to{transform:translateY(0);opacity:1}}
+  .calendar-sheet-grabber{width:38px;height:5px;border-radius:99px;background:var(--text-tertiary);opacity:.35;margin:2px auto 18px}
+  .calendar-modal-top{margin-bottom:14px}
+  .calendar-modal-title{font-size:25px;letter-spacing:-.055em}
+  .calendar-close{width:34px;height:34px;background:rgba(120,130,145,.13);font-size:20px}
+  .calendar-large-date{display:flex;align-items:baseline;gap:8px;padding:2px 1px 13px}
+  .calendar-large-date span{font-size:16px;font-weight:750;letter-spacing:-.02em;color:var(--text-primary)}
+  .calendar-large-date strong{font-size:32px;line-height:1;font-weight:850;letter-spacing:-.06em;color:var(--accent-blue)}
+  .calendar-large-date small{font-size:12px;font-weight:650;color:var(--text-secondary)}
+  .calendar-quick-picks{display:flex;gap:8px;margin:0 0 17px}
+  .calendar-quick-picks button{flex:1;min-height:35px;border:1px solid rgba(120,130,145,.12);border-radius:999px;background:rgba(120,130,145,.09);color:var(--text-secondary);font-size:11px;font-weight:750}
+  .calendar-quick-picks button:active{background:rgba(0,122,255,.14);color:var(--accent-blue);transform:scale(.97)}
+  .calendar-month-row{margin:0 0 10px;padding:0 1px}
+  .calendar-month-row strong{font-size:15px}
+  .calendar-nav{width:34px;height:34px;border-radius:50%;background:rgba(120,130,145,.10);font-size:22px}
+  .calendar-weekdays,.calendar-days{gap:4px}
+  .calendar-weekdays{margin-bottom:5px}
+  .calendar-weekdays span{font-size:10px;font-weight:800}
+  .calendar-day{aspect-ratio:1;min-height:0;border-radius:50%;font-size:13px;font-weight:650}
+  .calendar-day.outside{opacity:.18}
+  .calendar-day.today:not(.selected){background:rgba(0,122,255,.08);box-shadow:inset 0 0 0 1.3px rgba(0,122,255,.45);color:var(--accent-blue)}
+  .calendar-day.selected{border-radius:50%;background:var(--accent-blue);color:#fff;box-shadow:0 4px 12px rgba(0,122,255,.25)}
+  .calendar-footer{border-top:1px solid var(--glass-hairline);padding-top:13px;margin-top:14px;gap:10px}
+  .calendar-today-btn,.calendar-done-btn{height:46px;border-radius:15px}
+  .calendar-today-btn{flex:1}
+  .calendar-done-btn{flex:1.5}
+  .calendar-safe-area{height:2px}
+  @media(max-width:360px){.calendar-sheet-overlay .calendar-modal{padding-left:16px;padding-right:16px}.calendar-day{font-size:12px}.calendar-quick-picks{gap:5px}}
+  @media(prefers-reduced-motion:reduce){.calendar-modal,.calendar-day,.calendar-nav,.date-trigger-btn,.calendar-sheet-overlay{animation:none;transition:none}}
+
+  /* iOS 26-inspired date selection refinement */
+  .calendar-sheet-overlay{background:rgba(8,14,24,.42);backdrop-filter:blur(14px) saturate(125%);-webkit-backdrop-filter:blur(14px) saturate(125%)}
+  .calendar-sheet-overlay .calendar-modal{
+    width:min(100%,460px);padding:9px 23px calc(22px + env(safe-area-inset-bottom));
+    border-radius:34px 34px 0 0;
+    background:color-mix(in srgb,var(--glass-bg-elevated) 88%,rgba(245,248,255,.22));
+    border:1px solid rgba(255,255,255,.58);border-bottom:0;
+    box-shadow:0 -22px 70px rgba(13,27,48,.24),inset 0 1px 0 rgba(255,255,255,.76);
+    backdrop-filter:blur(48px) saturate(205%);-webkit-backdrop-filter:blur(48px) saturate(205%);
+  }
+  .calendar-sheet-grabber{width:38px;height:5px;border-radius:99px;background:currentColor;opacity:.19;margin:3px auto 21px}
+  .calendar-modal-top{margin-bottom:13px}
+  .calendar-eyebrow{font-size:9px;letter-spacing:.17em;font-weight:850}
+  .calendar-modal-title{font-size:27px;line-height:1.12;letter-spacing:-.06em;font-weight:850}
+  .calendar-close{width:36px;height:36px;border:1px solid rgba(120,130,145,.10);background:rgba(120,130,145,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.32)}
+  .calendar-large-date{align-items:center;gap:10px;padding:5px 2px 16px}
+  .calendar-large-date span{font-size:15px;font-weight:760}
+  .calendar-large-date strong{font-size:35px;letter-spacing:-.07em}
+  .calendar-large-date small{font-size:12px;font-weight:650}
+  .calendar-quick-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:17px}
+  .calendar-quick-picks button{min-height:38px;border-radius:13px;background:rgba(120,130,145,.085);border:1px solid rgba(120,130,145,.10);font-size:11px;font-weight:760;transition:background .16s ease,transform .16s ease,color .16s ease}
+  .calendar-quick-picks button.active{background:rgba(0,122,255,.13);border-color:rgba(0,122,255,.22);color:var(--accent-blue);box-shadow:inset 0 1px 0 rgba(255,255,255,.38)}
+  .calendar-month-row{margin-bottom:11px;padding:0 1px}
+  .calendar-month-row strong{font-size:16px;font-weight:820;letter-spacing:-.035em}
+  .calendar-nav{width:36px;height:36px;border-radius:50%;font-size:23px;background:rgba(120,130,145,.10);border:1px solid rgba(120,130,145,.10)}
+  .calendar-weekdays,.calendar-days{gap:5px}
+  .calendar-weekdays{margin-bottom:7px}
+  .calendar-weekdays span{font-size:10px;font-weight:820;letter-spacing:.025em}
+  .calendar-day{width:100%;min-height:39px;aspect-ratio:1;border-radius:50%;font-size:13px;font-weight:650}
+  .calendar-day.outside{opacity:.16}
+  .calendar-day.today:not(.selected){background:rgba(0,122,255,.075);box-shadow:inset 0 0 0 1.4px rgba(0,122,255,.55);color:var(--accent-blue);font-weight:850}
+  .calendar-day.selected{border-radius:50%;background:var(--accent-blue);color:#fff;font-weight:850;box-shadow:0 5px 14px rgba(0,122,255,.27),inset 0 1px 0 rgba(255,255,255,.25)}
+  .calendar-day:focus-visible,.calendar-nav:focus-visible,.calendar-close:focus-visible,.calendar-quick-picks button:focus-visible{outline:2px solid var(--accent-blue);outline-offset:3px}
+  .calendar-footer{margin-top:13px;padding-top:13px;border-top:1px solid var(--glass-hairline);gap:10px}
+  .calendar-today-btn,.calendar-done-btn{height:47px;border-radius:16px;font-size:13px;font-weight:820}
+  .calendar-today-btn{flex:1;background:rgba(0,122,255,.085);border:1px solid rgba(0,122,255,.10)}
+  .calendar-done-btn{flex:1.5}
+  .calendar-safe-area{height:env(safe-area-inset-bottom)}
+  @media(max-width:380px){
+    .calendar-sheet-overlay .calendar-modal{padding-left:17px;padding-right:17px}
+    .calendar-days,.calendar-weekdays{gap:3px}
+    .calendar-day{min-height:35px;font-size:12px}
+    .calendar-large-date strong{font-size:32px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .calendar-sheet-overlay .calendar-modal,.calendar-day,.calendar-nav,.calendar-quick-picks button{animation:none!important;transition:none!important}
+  }
+
 </style>
 </head>
 <body>
@@ -2365,8 +2507,7 @@
               <circle id="ringTasks" cx="56" cy="56" r="46" fill="none" stroke="#007AFF" stroke-width="7" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/>
               <circle cx="56" cy="56" r="36" fill="none" stroke="var(--ring-track)" stroke-width="7"/>
               <circle id="ringHabits" cx="56" cy="56" r="36" fill="none" stroke="#34C759" stroke-width="7" stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="226"/>
-              <circle cx="56" cy="56" r="26" fill="none" stroke="var(--ring-track)" stroke-width="7"/>
-              <circle id="ringNotes" cx="56" cy="56" r="26" fill="none" stroke="#FF9F0A" stroke-width="7" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="163"/>
+              
             </svg>
             <div class="pulse-center-text">
               <div class="pulse-pct" id="pulsePct">0%</div>
@@ -2382,10 +2523,7 @@
               <span class="pulse-dot-lbl"><span class="dot-ind" style="background:#34C759"></span>Habits</span>
               <strong id="pulseHabitsTxt">0%</strong>
             </div>
-            <div class="pulse-row">
-              <span class="pulse-dot-lbl"><span class="dot-ind" style="background:#FF9F0A"></span>Notes</span>
-              <strong id="pulseNotesTxt">0</strong>
-            </div>
+            <div class="pulse-row"><span class="pulse-dot-lbl">Notes</span><strong id="pulseNotesTxt">0</strong></div>
           </div>
         </div>
 
@@ -2423,8 +2561,8 @@
 
       <!-- Today's Tasks -->
       <div class="section-head">
-        <h2 class="section-title">Today's Tasks</h2>
-        <span class="section-hint">Swipe cards left/right</span>
+        <h2 class="section-title" id="taskSectionTitle">Today's Tasks</h2>
+        <button type="button" class="task-calendar-link" onclick="openTaskCalendar('view')">▦ Calendar</button>
       </div>
 
       <div class="segmented-bar" id="taskFilterBar">
@@ -2552,12 +2690,12 @@
             <circle cx="52" cy="52" r="40" fill="none" stroke="var(--ring-track)" stroke-width="12"/>
             <circle id="donutTasks" cx="52" cy="52" r="40" fill="none" stroke="#007AFF" stroke-width="12" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
             <circle id="donutHabits" cx="52" cy="52" r="40" fill="none" stroke="#34C759" stroke-width="12" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
-            <circle id="donutNotes" cx="52" cy="52" r="40" fill="none" stroke="#FF9F0A" stroke-width="12" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
+            
           </svg>
           <div class="donut-legend">
             <div class="donut-row"><span><span style="color:#007AFF">●</span> Tasks</span><span id="balTasksPct">0%</span></div>
             <div class="donut-row"><span><span style="color:#34C759">●</span> Habits</span><span id="balHabitsPct">0%</span></div>
-            <div class="donut-row"><span><span style="color:#FF9F0A">●</span> Notes</span><span id="balNotesPct">0%</span></div>
+            
           </div>
         </div>
       </div>
@@ -2635,6 +2773,10 @@
       </div>
 
       <div class="inset-group">
+        <label class="inset-label">Plan for date</label>
+        <button type="button" class="date-trigger-btn" id="newTaskDateTrigger" onclick="openTaskCalendar('newTask')"><span class="date-trigger-icon">▦</span><span id="newTaskDateLabel">Today</span><span class="date-trigger-chevron">⌄</span></button>
+      </div>
+      <div class="inset-group">
         <div class="reminder-trigger-row">
           <div>
             <span class="inset-label" style="margin-bottom:2px;">Time Reminder</span>
@@ -2677,6 +2819,39 @@
       </div>
 
       <button class="sheet-submit-btn" onclick="createNewTask()">Add Task</button>
+    </div>
+  </div>
+
+  <!-- iOS-inspired task date calendar sheet -->
+  <div class="sheet-overlay calendar-sheet-overlay" id="taskCalendarOverlay" onclick="closeSheetOnBg(event, 'taskCalendarOverlay')">
+    <div class="calendar-modal" role="dialog" aria-modal="true" aria-labelledby="calendarMonthTitle">
+      <div class="calendar-sheet-grabber"></div>
+      <div class="calendar-modal-top">
+        <div><div class="calendar-eyebrow">PLAN YOUR DAY</div><div class="calendar-modal-title">Choose a date</div></div>
+        <button class="calendar-close" onclick="closeSheet('taskCalendarOverlay')" aria-label="Close calendar">×</button>
+      </div>
+      <div class="calendar-large-date" aria-live="polite">
+        <span id="calendarSelectedWeekday">Friday</span>
+        <strong id="calendarSelectedDate">20</strong>
+        <small id="calendarSelectedMonth">November 2026</small>
+      </div>
+      <div class="calendar-quick-picks" aria-label="Quick date choices">
+        <button type="button" onclick="chooseCalendarQuickDate(0)">Today</button>
+        <button type="button" onclick="chooseCalendarQuickDate(1)">Tomorrow</button>
+        <button type="button" onclick="chooseCalendarQuickDate(7)">Next week</button>
+      </div>
+      <div class="calendar-month-row">
+        <button class="calendar-nav" onclick="changeCalendarMonth(-1)" aria-label="Previous month">‹</button>
+        <strong id="calendarMonthTitle">November 2026</strong>
+        <button class="calendar-nav" onclick="changeCalendarMonth(1)" aria-label="Next month">›</button>
+      </div>
+      <div class="calendar-weekdays"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+      <div class="calendar-days" id="taskCalendarDays"></div>
+      <div class="calendar-footer">
+        <button class="calendar-today-btn" onclick="calendarChooseToday()">Today</button>
+        <button class="calendar-done-btn" onclick="confirmCalendarDate()">Done</button>
+      </div>
+      <div class="calendar-safe-area"></div>
     </div>
   </div>
 
@@ -2766,6 +2941,12 @@
       </div>
 
       <div class="inset-group">
+        <label class="inset-label">Days per week</label>
+        <div class="chip-grid" id="habitScheduleDays"></div>
+        <div class="view-sub" id="habitScheduleSummary" style="margin-top:7px;">Every day</div>
+      </div>
+
+      <div class="inset-group">
         <label class="inset-label">Icon & Accent</label>
         <div class="swatch-row" id="habitIconSwatches" style="margin-bottom:10px;"></div>
         <div class="swatch-row" id="habitColorSwatches"></div>
@@ -2844,7 +3025,7 @@
     const now = Date.now();
     return {
       theme: 'light',
-      selectedDayIndex: 4, // Friday (0=Mon .. 6=Sun)
+      selectedDayIndex: (new Date().getDay() + 6) % 7, // Current weekday (0=Mon .. 6=Sun)
       spotlightIdx: 0,
       taskFilter: 'all',
       habitFilter: 'all',
@@ -2903,12 +3084,78 @@
     SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
   }
 
+  if (!state || typeof state !== 'object' || Array.isArray(state)) state = getDefaultState();
+  if (!Array.isArray(state.tasks)) state.tasks = [];
+  if (!Array.isArray(state.habits)) state.habits = [];
+  if (!Array.isArray(state.notes)) state.notes = [];
+  if (state.theme !== 'dark') state.theme = 'light';
+  const hasSavedPlannerDate = /^\d{4}-\d{2}-\d{2}$/.test(state.selectedDate || '');
+  if (!hasSavedPlannerDate) state.selectedDate = localDateKey(new Date());
+  else state.selectedDayIndex = (new Date(state.selectedDate + 'T12:00:00').getDay()+6)%7;
+  state.tasks = state.tasks.filter(t=>t && typeof t==='object' && !Array.isArray(t)).map(t=>{
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t.taskDate || '')) t.taskDate = localDateKey(new Date());
+    t.title = String(t.title || 'Untitled task').slice(0,160);
+    t.category = ['Work','Personal','Wellness','Focus'].includes(t.category) ? t.category : 'Work';
+    t.priority = ['None','Low','Medium','High','Urgent'].includes(t.priority) ? t.priority : 'None';
+    return t;
+  });
+
+  function localDateKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  }
+
+  function getHabitProgress(habit, key = localDateKey(new Date())) {
+    let value = 0;
+    if (habit.dailyLogs && typeof habit.dailyLogs === 'object') {
+      value = Object.prototype.hasOwnProperty.call(habit.dailyLogs,key) ? Number(habit.dailyLogs[key]) : 0;
+    } else if (key === localDateKey(new Date())) {
+      value = Number(habit.current) || 0;
+    }
+    return Math.max(0,Math.min(Number(habit.target)||1,Number.isFinite(value)?value:0));
+  }
+
+  function migrateHabitHistory() {
+    if (!Array.isArray(state.habits)) state.habits = [];
+    const now = new Date(state.selectedDate + 'T12:00:00');
+    const monday = new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
+    state.habits = state.habits.filter(h => h && typeof h === 'object' && !Array.isArray(h));
+    state.habits.forEach(h => {
+      h.target = Math.max(1, Math.min(999, Math.floor(Number(h.target) || 1)));
+      h.name = String(h.name || 'Untitled habit').slice(0, 80);
+      if (!HABIT_COLORS.includes(h.color)) h.color = '#007AFF';
+      if (!Object.prototype.hasOwnProperty.call(HABIT_ICONS, h.icon)) h.icon = 'drop';
+      if (!h.dailyLogs || typeof h.dailyLogs !== 'object' || Array.isArray(h.dailyLogs)) {
+        h.dailyLogs = {};
+        const legacy = Math.max(0,Number(h.current)||0);
+        if (legacy > 0) {
+          const idx = Number.isInteger(state.selectedDayIndex) ? Math.max(0,Math.min(6,state.selectedDayIndex)) : ((now.getDay()+6)%7);
+          const oldDate = new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+idx);
+          if (oldDate > now) oldDate.setDate(oldDate.getDate()-7);
+          h.dailyLogs[localDateKey(oldDate)] = Math.min(Number(h.target)||legacy,legacy);
+        }
+      }
+      if (!Array.isArray(h.scheduleDays)) h.scheduleDays = [0,1,2,3,4,5,6];
+      h.scheduleDays = [...new Set(h.scheduleDays.map(Number).filter(d=>Number.isInteger(d)&&d>=0&&d<=6))];
+      h.current = getHabitProgress(h,localDateKey(now));
+    });
+  }
+
+  migrateHabitHistory();
+  state.selectedDayIndex = (parseLocalDate(state.selectedDate).getDay()+6)%7;
+  saveState();
+
   // Transient UI state
   let pendingNewTaskReminderAt = null;
+  let selectedTaskDate = localDateKey(new Date());
+  let calendarDraftDate = selectedTaskDate;
+  let calendarMonthCursor = new Date(new Date().getFullYear(),new Date().getMonth(),1);
+  let calendarContext = 'newTask';
+  let clockTargetDateKey = localDateKey(new Date());
   let newTaskCat = 'Work';
   let newTaskPrio = 'None';
   let newHabitTarget = 8;
   let newHabitUnit = 'times';
+  let newHabitScheduleDays = [0,1,2,3,4,5,6];
   let newHabitIcon = 'drop';
   let newHabitColor = '#007AFF';
   let habitToDeleteId = null;
@@ -3026,6 +3273,7 @@
       const curTheme = state.theme;
       state = getDefaultState();
       state.theme = curTheme;
+      migrateHabitHistory();
       saveState();
       renderAll();
       showIslandMessage('Sample Data Restored');
@@ -3095,14 +3343,13 @@
     const doneTasks = state.tasks.filter(t => t.done).length;
     const taskPct = totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
 
-    let habitRatioSum = 0;
-    state.habits.forEach(h => {
-      habitRatioSum += Math.min(1, h.current / Math.max(1, h.target));
-    });
-    const habitPct = state.habits.length === 0 ? 0 : Math.round((habitRatioSum / state.habits.length) * 100);
-
-    const notePct = Math.min(100, state.notes.length * 25);
-    const flowPct = Math.round((taskPct * 0.4) + (habitPct * 0.4) + (notePct * 0.2));
+    const today = new Date();
+    const todayKey = localDateKey(today);
+    const dueHabits = state.habits.filter(h => h.scheduleDays.includes(today.getDay()));
+    const habitRatioSum = dueHabits.reduce((sum,h) => sum + Math.min(1,getHabitProgress(h,todayKey)/Math.max(1,h.target)),0);
+    const habitPct = dueHabits.length ? Math.round(habitRatioSum/dueHabits.length*100) : 0;
+    const notePct = 0;
+    const flowPct = Math.round((taskPct * 0.5) + (habitPct * 0.5));
     const bestStreak = state.habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
     const activeReminders = state.tasks.filter(t => !t.done && t.reminderAt).length;
 
@@ -3112,20 +3359,30 @@
   // Render 7-Day Ribbon
   function renderWeekRibbon() {
     const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    const nums = [16, 17, 18, 19, 20, 21, 22];
+    const selected = parseLocalDate(state.selectedDate || localDateKey(new Date()));
+    const monday = new Date(selected.getFullYear(),selected.getMonth(),selected.getDate()-((selected.getDay()+6)%7));
     const container = document.getElementById('weekRibbon');
-    container.innerHTML = letters.map((l, idx) => `
-      <button class="day-cell ${state.selectedDayIndex === idx ? 'selected' : ''}" onclick="selectWeekDay(${idx})">
-        <span class="day-letter">${l}</span>
-        <span class="day-num">${nums[idx]}</span>
-      </button>
-    `).join('');
+    container.innerHTML = letters.map((label,idx) => {
+      const date = new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+idx);
+      const isSelected = localDateKey(date) === state.selectedDate;
+      return `
+        <button class="day-cell ${isSelected ? 'selected' : ''}" onclick="selectWeekDay(${idx})" aria-label="${date.toLocaleDateString()}" aria-pressed="${isSelected}">
+          <span class="day-letter">${label}</span>
+          <span class="day-num">${date.getDate()}</span>
+        </button>
+      `;
+    }).join('');
   }
 
   function selectWeekDay(idx) {
+    const selected = new Date(state.selectedDate + 'T12:00:00');
+    const monday = new Date(selected.getFullYear(),selected.getMonth(),selected.getDate()-((selected.getDay()+6)%7));
+    const date = new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+idx);
     state.selectedDayIndex = idx;
+    state.selectedDate = localDateKey(date);
+    selectedTaskDate = state.selectedDate;
     saveState();
-    renderWeekRibbon();
+    renderAll();
     hapticFeedback();
   }
 
@@ -3189,7 +3446,6 @@
 
     document.getElementById('ringTasks').style.strokeDashoffset = 289 - (289 * m.taskPct) / 100;
     document.getElementById('ringHabits').style.strokeDashoffset = 226 - (226 * m.habitPct) / 100;
-    document.getElementById('ringNotes').style.strokeDashoffset = 163 - (163 * m.notePct) / 100;
 
     const topNote = state.notes.find(n => n.pinned) || state.notes[0];
     document.getElementById('quickJotPreview').textContent = topNote
@@ -3207,7 +3463,9 @@
   function renderTodayRituals() {
     const grid = document.getElementById('todayRitualMatrix');
     const cards = state.habits.slice(0, 4).map(h => {
-      const pct = Math.min(100, Math.round((h.current / Math.max(1, h.target)) * 100));
+      const todayProgress = getHabitProgress(h, localDateKey(new Date()));
+      h.current = todayProgress;
+      const pct = Math.min(100, Math.round((todayProgress / Math.max(1, h.target)) * 100));
       return `
         <div class="glass-card ritual-tile" onclick="stepHabit('${h.id}', 1)">
           <div class="ritual-tile-top">
@@ -3250,10 +3508,14 @@
   }
 
   function renderTasks() {
-    const allCount = state.tasks.length;
-    const schedCount = state.tasks.filter(t => !t.done && t.reminderAt).length;
-    const focusCount = state.tasks.filter(t => !t.done && (t.priority === 'High' || t.priority === 'Urgent')).length;
-    const doneCount = state.tasks.filter(t => t.done).length;
+    const dateTasks = state.tasks.filter(t => (t.taskDate || localDateKey(new Date())) === state.selectedDate);
+    const allCount = dateTasks.length;
+    const schedCount = dateTasks.filter(t => !t.done && t.reminderAt).length;
+    const focusCount = dateTasks.filter(t => !t.done && (t.priority === 'High' || t.priority === 'Urgent')).length;
+    const doneCount = dateTasks.filter(t => t.done).length;
+    const selectedDateObj = new Date(state.selectedDate + 'T12:00:00');
+    const isToday = state.selectedDate === localDateKey(new Date());
+    document.getElementById('taskSectionTitle').textContent = isToday ? "Today's Tasks" : 'Tasks · ' + selectedDateObj.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:selectedDateObj.getFullYear()===new Date().getFullYear()?undefined:'numeric'});
 
     const filterBtns = document.querySelectorAll('#taskFilterBar .seg-btn');
     filterBtns.forEach(btn => {
@@ -3266,7 +3528,7 @@
     });
 
     const query = (document.getElementById('taskSearchInput').value || '').trim().toLowerCase();
-    const filtered = state.tasks.filter(t => {
+    const filtered = dateTasks.filter(t => {
       if (state.taskFilter === 'scheduled' && (t.done || !t.reminderAt)) return false;
       if (state.taskFilter === 'focus' && (t.done || (t.priority !== 'High' && t.priority !== 'Urgent'))) return false;
       if (state.taskFilter === 'done' && !t.done) return false;
@@ -3403,10 +3665,12 @@
 
   // New Task Sheet Logic
   function openNewTaskSheet() {
+    selectedTaskDate = state.selectedDate || localDateKey(new Date());
     pendingNewTaskReminderAt = null;
     newTaskCat = 'Work';
     newTaskPrio = 'None';
     document.getElementById('newTaskTitleInput').value = '';
+    updateNewTaskDateLabel();
     document.getElementById('newTaskReminderSub').textContent = 'No alert scheduled';
     document.getElementById('newTaskTimeTrigger').textContent = '🔔 Set Time ⌄';
     selectNewTaskCat('Work');
@@ -3444,7 +3708,7 @@
     const rawTitle = (document.getElementById('newTaskTitleInput').value || '').trim();
     document.getElementById('previewBannerTitle').textContent = rawTitle || 'New Scheduled Task';
     document.getElementById('previewBannerTime').textContent = pendingNewTaskReminderAt
-      ? `Scheduled for ${formatTime12(pendingNewTaskReminderAt)} · ${formatRelativeCountdown(pendingNewTaskReminderAt)}`
+      ? 'Scheduled for ' + formatTaskDate(selectedTaskDate) + ' · ' + formatTime12(pendingNewTaskReminderAt) + ' · ' + formatRelativeCountdown(pendingNewTaskReminderAt)
       : 'Tap Set Time to schedule push alert';
   }
 
@@ -3456,10 +3720,13 @@
       title,
       category: newTaskCat,
       priority: newTaskPrio,
+      taskDate: selectedTaskDate,
       done: false,
       reminderAt: pendingNewTaskReminderAt,
       notified: false
     };
+    state.selectedDate = selectedTaskDate;
+    state.selectedDayIndex = (new Date(selectedTaskDate + 'T12:00:00').getDay()+6)%7;
     state.tasks.unshift(newTask);
     saveState();
     scheduleNativeAndroidAlarmIfAvailable(newTask);
@@ -3467,6 +3734,115 @@
     renderAll();
     hapticFeedback();
     showIslandMessage(newTask.reminderAt ? `Reminder set · ${formatTime12(newTask.reminderAt)}` : 'Task Added');
+  }
+
+
+  function parseLocalDate(key) {
+    const parts = String(key).split('-').map(Number);
+    return new Date(parts[0],parts[1]-1,parts[2],12,0,0,0);
+  }
+  function formatTaskDate(key) {
+    const d = parseLocalDate(key), today = localDateKey(new Date()), tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate()+1);
+    if (key === today) return 'Today';
+    if (key === localDateKey(tomorrow)) return 'Tomorrow';
+    return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:d.getFullYear()===new Date().getFullYear()?undefined:'numeric'});
+  }
+  function updateNewTaskDateLabel() {
+    const label = document.getElementById('newTaskDateLabel');
+    if (label) label.textContent = formatTaskDate(selectedTaskDate);
+  }
+  function openTaskCalendar(context='newTask') {
+    calendarContext = context;
+    calendarDraftDate = context === 'newTask' ? selectedTaskDate : state.selectedDate;
+    const date = parseLocalDate(calendarDraftDate);
+    calendarMonthCursor = new Date(date.getFullYear(),date.getMonth(),1);
+    renderTaskCalendar();
+    document.getElementById('taskCalendarOverlay').classList.add('open');
+  }
+  function changeCalendarMonth(delta) {
+    calendarMonthCursor = new Date(calendarMonthCursor.getFullYear(),calendarMonthCursor.getMonth()+delta,1);
+    renderTaskCalendar();
+    hapticFeedback();
+  }
+  function renderTaskCalendar() {
+    const monthTitle = document.getElementById('calendarMonthTitle');
+    const grid = document.getElementById('taskCalendarDays');
+    if (!monthTitle || !grid) return;
+    monthTitle.textContent = calendarMonthCursor.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+    const first = new Date(calendarMonthCursor.getFullYear(),calendarMonthCursor.getMonth(),1);
+    const startOffset = (first.getDay()+6)%7;
+    const start = new Date(first.getFullYear(),first.getMonth(),1-startOffset);
+    const todayKey = localDateKey(new Date());
+    const selectedDate = parseLocalDate(calendarDraftDate);
+    const selectedLabel = document.getElementById('calendarSelectedDate');
+    const selectedWeekday = document.getElementById('calendarSelectedWeekday');
+    const selectedMonth = document.getElementById('calendarSelectedMonth');
+    if (selectedLabel) selectedLabel.textContent = selectedDate.getDate();
+    if (selectedWeekday) selectedWeekday.textContent = calendarDraftDate === todayKey ? 'Today' : selectedDate.toLocaleDateString(undefined,{weekday:'long'});
+    if (selectedMonth) selectedMonth.textContent = selectedDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+    const quickDates = [0,1,7].map(offset => { const d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+offset); return localDateKey(d); });
+    document.querySelectorAll('.calendar-quick-picks button').forEach((button,index)=>{
+      const active = quickDates[index] === calendarDraftDate;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
+    grid.innerHTML = Array.from({length:42},(_,i)=>{
+      const d = new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+      const key = localDateKey(d), outside = d.getMonth()!==calendarMonthCursor.getMonth();
+      const selected = key===calendarDraftDate, today = key===todayKey;
+      return `<button type="button" class="calendar-day ${outside?'outside':''} ${selected?'selected':''} ${today?'today':''}" aria-label="${d.toLocaleDateString()}" aria-pressed="${selected}" onclick="chooseCalendarDay('${key}')">${d.getDate()}</button>`;
+    }).join('');
+  }
+  function chooseCalendarQuickDate(offsetDays) {
+    const today = new Date();
+    const date = new Date(today.getFullYear(),today.getMonth(),today.getDate()+offsetDays);
+    calendarDraftDate = localDateKey(date);
+    calendarMonthCursor = new Date(date.getFullYear(),date.getMonth(),1);
+    renderTaskCalendar();
+    hapticFeedback();
+  }
+  function chooseCalendarDay(key) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return;
+    const d = parseLocalDate(key);
+    if (localDateKey(d)!==key) return;
+    calendarDraftDate = key;
+    calendarMonthCursor = new Date(d.getFullYear(),d.getMonth(),1);
+    renderTaskCalendar();
+    hapticFeedback();
+  }
+  function calendarChooseToday() {
+    calendarDraftDate = localDateKey(new Date());
+    calendarMonthCursor = new Date(new Date().getFullYear(),new Date().getMonth(),1);
+    renderTaskCalendar();
+  }
+  function confirmCalendarDate() {
+    if (calendarContext === 'newTask') {
+      if (pendingNewTaskReminderAt) {
+        if (calendarDraftDate < localDateKey(new Date())) {
+          pendingNewTaskReminderAt = null;
+          document.getElementById('newTaskReminderSub').textContent = 'Past tasks cannot have a reminder';
+          document.getElementById('newTaskTimeTrigger').textContent = '🔔 Set Time ⌄';
+        } else {
+          const previousReminder = new Date(pendingNewTaskReminderAt);
+          const selected = parseLocalDate(calendarDraftDate);
+          selected.setHours(previousReminder.getHours(),previousReminder.getMinutes(),0,0);
+          pendingNewTaskReminderAt = selected.getTime();
+          document.getElementById('newTaskReminderSub').textContent = 'Scheduled · ' + formatTaskDate(calendarDraftDate) + ' · ' + formatTime12(pendingNewTaskReminderAt);
+          document.getElementById('newTaskTimeTrigger').textContent = '🔔 ' + formatTime12(pendingNewTaskReminderAt) + ' ⌄';
+        }
+      }
+      selectedTaskDate = calendarDraftDate;
+      updateNewTaskDateLabel();
+      updatePushPreview();
+    } else {
+      state.selectedDate = calendarDraftDate;
+      state.selectedDayIndex = (parseLocalDate(calendarDraftDate).getDay()+6)%7;
+      saveState();
+      renderAll();
+    }
+    closeSheet('taskCalendarOverlay');
+    hapticFeedback();
   }
 
   // ==================== CUSTOM APPLE LIQUID GLASS CLOCK POPUP ====================
@@ -3534,7 +3910,9 @@
 
   function openClockForNewTask() {
     clockContext = 'newTask';
-    const base = pendingNewTaskReminderAt ? new Date(pendingNewTaskReminderAt) : new Date(Date.now() + 15 * 60 * 1000);
+    clockTargetDateKey = selectedTaskDate;
+    const targetDate = parseLocalDate(clockTargetDateKey);
+    const base = pendingNewTaskReminderAt ? new Date(pendingNewTaskReminderAt) : (clockTargetDateKey === localDateKey(new Date()) ? new Date(Date.now() + 15 * 60 * 1000) : new Date(targetDate.getFullYear(),targetDate.getMonth(),targetDate.getDate(),9,15));
     loadDateIntoClock(base);
     document.getElementById('clockPopupOverlay').classList.add('open');
   }
@@ -3542,7 +3920,9 @@
   function openClockForTask(taskId) {
     clockContext = taskId;
     const t = state.tasks.find(x => x.id === taskId);
-    const base = (t && t.reminderAt) ? new Date(t.reminderAt) : new Date(Date.now() + 15 * 60 * 1000);
+    clockTargetDateKey = t && t.taskDate ? t.taskDate : localDateKey(new Date());
+    const targetDate = parseLocalDate(clockTargetDateKey);
+    const base = (t && t.reminderAt) ? new Date(t.reminderAt) : (clockTargetDateKey === localDateKey(new Date()) ? new Date(Date.now() + 15 * 60 * 1000) : new Date(targetDate.getFullYear(),targetDate.getMonth(),targetDate.getDate(),9,15));
     loadDateIntoClock(base);
     document.getElementById('clockPopupOverlay').classList.add('open');
   }
@@ -3590,10 +3970,9 @@
     const now = new Date();
     let h24 = clockHour12 % 12;
     if (clockAmPm === 'PM') h24 += 12;
-    const candidate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h24, clockMinute, 0, 0);
-    if (candidate.getTime() <= now.getTime()) {
-      candidate.setDate(candidate.getDate() + 1);
-    }
+    const targetDate = parseLocalDate(clockTargetDateKey || localDateKey(now));
+    const candidate = new Date(targetDate.getFullYear(),targetDate.getMonth(),targetDate.getDate(),h24,clockMinute,0,0);
+    if (clockTargetDateKey === localDateKey(now) && candidate.getTime() <= now.getTime()) candidate.setDate(candidate.getDate()+1);
     return candidate.getTime();
   }
 
@@ -3614,9 +3993,8 @@
     });
 
     const targetMs = computeTargetTimestamp();
-    const isTomorrow = new Date(targetMs).getDate() !== new Date().getDate();
     document.getElementById('clockCountdownPill').textContent =
-      `${isTomorrow ? 'Tomorrow' : 'Today'} · ${formatRelativeCountdown(targetMs)}`;
+      `${formatTaskDate(localDateKey(new Date(targetMs)))} · ${formatRelativeCountdown(targetMs)}`;
 
     if (clockMode === 'dial') renderChronoDial();
   }
@@ -3701,7 +4079,11 @@
   }
 
   function applyClockPresetMinutes(mins) {
-    const target = new Date(Date.now() + mins * 60 * 1000);
+    const now = new Date();
+    const selected = parseLocalDate(clockTargetDateKey || localDateKey(now));
+    const target = clockTargetDateKey === localDateKey(now)
+      ? new Date(Date.now() + mins * 60 * 1000)
+      : new Date(selected.getFullYear(),selected.getMonth(),selected.getDate(),9,mins,0,0);
     loadDateIntoClock(target);
     clockPresetExactMs = target.getTime();
     syncClockUI();
@@ -3739,9 +4121,13 @@
 
   function confirmClockSelection() {
     const targetMs = computeTargetTimestamp();
+    if (clockTargetDateKey < localDateKey(new Date())) {
+      showIslandMessage('Choose a future date for reminder');
+      return;
+    }
     if (clockContext === 'newTask') {
       pendingNewTaskReminderAt = targetMs;
-      document.getElementById('newTaskReminderSub').textContent = `Scheduled · ${formatRelativeCountdown(targetMs)}`;
+      document.getElementById('newTaskReminderSub').textContent = 'Scheduled · ' + formatTaskDate(selectedTaskDate) + ' · ' + formatTime12(targetMs);
       document.getElementById('newTaskTimeTrigger').textContent = `🔔 ${formatTime12(targetMs)} ⌄`;
       updatePushPreview();
     } else {
@@ -3876,7 +4262,10 @@
   function stepHabit(id, delta) {
     const h = state.habits.find(x => x.id === id);
     if (!h) return;
-    h.current = Math.max(0, Math.min(h.target, h.current + delta));
+    const key = localDateKey(new Date());
+    if (!h.dailyLogs) h.dailyLogs = {};
+    h.current = Math.max(0,Math.min(h.target,getHabitProgress(h,key)+delta));
+    h.dailyLogs[key] = h.current;
     saveState();
     renderAll();
     hapticFeedback();
@@ -3895,7 +4284,13 @@
     // 7-Day Rhythm Bar: past/future days stay plain/blank (0%); Today (index 4) reflects live habitPct
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     document.getElementById('habitsRhythmBars').innerHTML = days.map((d, idx) => {
-      const fillPct = idx === 4 ? m.habitPct : 0;
+      const date = new Date();
+      date.setHours(0,0,0,0);
+      date.setDate(date.getDate()-((date.getDay()+6)%7)+idx);
+      const key = localDateKey(date);
+      const due = state.habits.filter(h=>h.scheduleDays.includes(date.getDay()));
+      const completed = due.filter(h=>getHabitProgress(h,key)>=h.target).length;
+      const fillPct = due.length ? Math.round(completed/due.length*100) : 0;
       return `
         <div class="rhythm-col">
           <div class="rhythm-bar-track">
@@ -3906,6 +4301,7 @@
       `;
     }).join('');
 
+    state.habits.forEach(h => { h.current = getHabitProgress(h, localDateKey(new Date())); });
     document.querySelectorAll('#habitFilterBar .seg-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.hfilter === state.habitFilter);
     });
@@ -3924,12 +4320,18 @@
     }
 
     list.innerHTML = filtered.map(h => {
-      const pct = Math.min(100, Math.round((h.current / Math.max(1, h.target)) * 100));
-      const isDone = h.current >= h.target;
-      // 7-day consistency dots: past/future dots stay blank; Today dot (idx 4) shows blank / half / full green
-      const dotsHtml = [0,1,2,3,4,5,6].map(idx => {
-        const dotH = idx === 4 ? pct : 0;
-        return `<div class="habit-dot"><div class="habit-dot-fill" style="height:${dotH}%"></div></div>`;
+      const today = new Date();
+      const todayKey = localDateKey(today);
+      const todayProgress = getHabitProgress(h,todayKey);
+      h.current = todayProgress;
+      const pct = Math.min(100,Math.round(todayProgress/Math.max(1,h.target)*100));
+      const isDone = todayProgress >= h.target;
+      const dotsHtml = Array.from({length:7},(_,idx)=>{
+        const date = new Date(today.getFullYear(),today.getMonth(),today.getDate()-((today.getDay()+6)%7)+idx);
+        const key = localDateKey(date);
+        const dayPct = Math.min(100,Math.round(getHabitProgress(h,key)/Math.max(1,h.target)*100));
+        const scheduled = h.scheduleDays.includes(date.getDay());
+        return `<div class="habit-dot" title="${date.toLocaleDateString()} · ${dayPct}%${scheduled?'':' · Rest day'}"><div class="habit-dot-fill" style="height:${dayPct}%"></div></div>`;
       }).join('');
 
       return `
@@ -3944,7 +4346,7 @@
                 <span class="habit-name">${escapeHtml(h.name)}</span>
                 <span class="habit-streak-tag">🔥 ${h.streak}d</span>
               </div>
-              <div class="habit-sub">${h.current} of ${h.target} ${h.unit} · ${pct}%</div>
+              <div class="habit-sub">${todayProgress} of ${h.target} ${h.unit} · ${pct}% today · ${h.scheduleDays.length}/7 days</div>
             </div>
             <button class="row-mini-btn" onclick="promptDeleteHabit('${h.id}')" aria-label="Delete Habit">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
@@ -3969,12 +4371,14 @@
   function openNewHabitSheet() {
     newHabitTarget = 8;
     newHabitUnit = 'times';
+    newHabitScheduleDays = [0,1,2,3,4,5,6];
     newHabitIcon = 'drop';
     newHabitColor = '#007AFF';
     document.getElementById('newHabitNameInput').value = '';
     document.getElementById('newHabitTargetVal').textContent = '8';
     selectHabitUnit('times');
     renderHabitSwatches();
+    renderHabitScheduleDays();
     document.getElementById('newHabitSheet').classList.add('open');
   }
 
@@ -4002,6 +4406,23 @@
     `).join('');
   }
 
+  function toggleHabitScheduleDay(day) {
+    const d = Number(day);
+    if (newHabitScheduleDays.includes(d)) {
+      if (newHabitScheduleDays.length === 1) return;
+      newHabitScheduleDays = newHabitScheduleDays.filter(x=>x!==d);
+    } else newHabitScheduleDays = [...newHabitScheduleDays,d].sort((a,b)=>a-b);
+    renderHabitScheduleDays();
+  }
+
+  function renderHabitScheduleDays() {
+    const days = [{d:1,l:'Mon'},{d:2,l:'Tue'},{d:3,l:'Wed'},{d:4,l:'Thu'},{d:5,l:'Fri'},{d:6,l:'Sat'},{d:0,l:'Sun'}];
+    const el = document.getElementById('habitScheduleDays');
+    if (!el) return;
+    el.innerHTML = days.map(x=>`<button type="button" class="choice-chip ${newHabitScheduleDays.includes(x.d)?'active':''}" aria-pressed="${newHabitScheduleDays.includes(x.d)}" onclick="toggleHabitScheduleDay(${x.d})">${x.l}</button>`).join('');
+    document.getElementById('habitScheduleSummary').textContent = newHabitScheduleDays.length===7?'Every day':`${newHabitScheduleDays.length} days per week`;
+  }
+
   function createNewHabit() {
     const raw = (document.getElementById('newHabitNameInput').value || '').trim();
     const name = raw || 'Daily Focus Ritual';
@@ -4009,9 +4430,11 @@
       id: 'h_' + Date.now(),
       name,
       current: 0,
+      dailyLogs: {},
+      scheduleDays: [...newHabitScheduleDays],
       target: newHabitTarget,
       unit: newHabitUnit,
-      streak: 1,
+      streak: 0,
       icon: newHabitIcon,
       color: newHabitColor
     });
@@ -4198,7 +4621,7 @@
 
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     document.getElementById('progressFlowBars').innerHTML = days.map((d, idx) => {
-      const isToday = idx === 4; // Friday
+      const isToday = idx === ((new Date().getDay()+6)%7);
       const hPx = isToday ? Math.max(12, Math.round((m.flowPct / 100) * 86)) : 12;
       return `
         <div class="flow-bar-col">
@@ -4208,33 +4631,29 @@
       `;
     }).join('');
 
-    // 28-Day Habit Consistency Grid:
-    // Indices 0..17 = Past dates (plain blank)
-    // Index 18 = Today (0% blank, 1..99% half-green fill, 100% full green)
-    // Indices 19..27 = Future dates (plain blank)
-    const todayIdx = 18;
+    const today = new Date();
+    const todayKey = localDateKey(today);
     const grid = document.getElementById('heatmapGrid');
-    grid.innerHTML = Array.from({ length: 28 }, (_, idx) => {
-      const isToday = idx === todayIdx;
-      const fillPct = isToday ? m.habitPct : 0;
-      const dayNum = idx + 2; // Nov 2 .. Nov 29
-      return `
-        <div class="heat-cell ${isToday ? 'today-cell' : ''}" onclick="selectHeatmapCell(${idx}, ${dayNum}, ${fillPct})">
-          <div class="heat-fill" style="height:${fillPct}%;"></div>
-        </div>
-      `;
+    grid.innerHTML = Array.from({length:28},(_,idx)=>{
+      const date = new Date(today.getFullYear(),today.getMonth(),today.getDate()-(27-idx));
+      const key = localDateKey(date);
+      const due = state.habits.filter(h=>h.scheduleDays.includes(date.getDay()));
+      const completed = due.filter(h=>getHabitProgress(h,key)>=h.target).length;
+      const fillPct = due.length ? Math.round(completed/due.length*100) : 0;
+      const isToday = key === todayKey;
+      return `<div class="heat-cell ${isToday?'today-cell':''}" role="button" tabindex="0" title="${date.toLocaleDateString()} · ${fillPct}%"
+        onclick="selectHeatmapCell(${idx}, '${key}', ${fillPct})"><div class="heat-fill" style="height:${fillPct}%;"></div></div>`;
     }).join('');
+    document.getElementById('heatmapSelectedDayLabel').textContent = 'Last 28 days · Select a day';
 
     // Daily Balance Donut
-    const totalShare = Math.max(1, m.taskPct + m.habitPct + m.notePct);
+    const totalShare = Math.max(1, m.taskPct + m.habitPct);
     const tFrac = m.taskPct / totalShare;
     const hFrac = m.habitPct / totalShare;
-    const nFrac = m.notePct / totalShare;
     const C = 251.3;
 
     const dTasks = document.getElementById('donutTasks');
     const dHabits = document.getElementById('donutHabits');
-    const dNotes = document.getElementById('donutNotes');
 
     dTasks.style.strokeDasharray = `${(tFrac * C).toFixed(1)} ${C}`;
     dTasks.style.strokeDashoffset = '0';
@@ -4242,18 +4661,15 @@
     dHabits.style.strokeDasharray = `${(hFrac * C).toFixed(1)} ${C}`;
     dHabits.style.strokeDashoffset = `${(-tFrac * C).toFixed(1)}`;
 
-    dNotes.style.strokeDasharray = `${(nFrac * C).toFixed(1)} ${C}`;
-    dNotes.style.strokeDashoffset = `${(-(tFrac + hFrac) * C).toFixed(1)}`;
-
     document.getElementById('balTasksPct').textContent = `${m.taskPct}%`;
     document.getElementById('balHabitsPct').textContent = `${m.habitPct}%`;
-    document.getElementById('balNotesPct').textContent = `${m.notePct}%`;
   }
 
-  function selectHeatmapCell(idx, dayNum, fillPct) {
+  function selectHeatmapCell(idx, dateKey, fillPct) {
     selectedHeatmapIdx = idx;
-    const status = idx < 18 ? 'Past · Blank' : idx > 18 ? 'Future · Blank' : `Today · ${fillPct}%`;
-    document.getElementById('heatmapSelectedDayLabel').textContent = `Nov ${dayNum} · ${status}`;
+    const [y,m,d] = dateKey.split('-').map(Number);
+    const date = new Date(y,m-1,d);
+    document.getElementById('heatmapSelectedDayLabel').textContent = `${date.toLocaleDateString(undefined,{month:'short',day:'numeric'})} · ${fillPct}% completed`;
     hapticFeedback();
   }
 

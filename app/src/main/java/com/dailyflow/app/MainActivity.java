@@ -19,6 +19,9 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.net.Uri;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -30,11 +33,13 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.webkit.WebViewAssetLoader;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String CHANNEL_ID = "daily_flow_reminders";
     private WebView webView;
+    private WebViewAssetLoader assetLoader;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -49,6 +54,10 @@ public class MainActivity extends AppCompatActivity {
         createNotificationChannel();
         requestNotificationPermissionIfNeeded();
 
+        assetLoader = new WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+            .build();
+
         webView = new WebView(this);
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
@@ -57,13 +66,37 @@ public class MainActivity extends AppCompatActivity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccess(true);
+        settings.setAllowFileAccess(false);
+        settings.setAllowContentAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) settings.setSafeBrowsingEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMediaPlaybackRequiresUserGesture(false);
 
         webView.addJavascriptInterface(new AndroidBridge(this), "AndroidBridge");
         webView.setWebChromeClient(new WebChromeClient());
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            private boolean isTrusted(Uri uri) {
+                return uri != null && "https".equals(uri.getScheme())
+                    && "appassets.androidplatform.net".equals(uri.getHost());
+            }
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                if (!isTrusted(uri)) return new WebResourceResponse("text/plain", "UTF-8", null);
+                return assetLoader.shouldInterceptRequest(uri);
+            }
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                return !isTrusted(request.getUrl());
+            }
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return !isTrusted(Uri.parse(url));
+            }
+        });
 
         // Forward Android status/navigation bar safe-area insets into CSS variables
         ViewCompat.setOnApplyWindowInsetsListener(webView, (v, windowInsets) -> {
@@ -85,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         setContentView(webView);
-        webView.loadUrl("file:///android_asset/www/index.html");
+        webView.loadUrl("https://appassets.androidplatform.net/assets/www/index.html");
     }
 
     @Override
@@ -159,6 +192,8 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void showImmediateNotification(String title, String body, int notifId) {
+            title = safeText(title, 80);
+            body = safeText(body, 240);
             Intent openIntent = new Intent(context, MainActivity.class);
             openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent pendingIntent = PendingIntent.getActivity(
@@ -186,6 +221,9 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void scheduleNotification(String title, String body, long triggerAtMillis, int requestCode) {
+            title = safeText(title, 80);
+            body = safeText(body, 240);
+            if (triggerAtMillis <= System.currentTimeMillis() || triggerAtMillis > System.currentTimeMillis() + 366L * 24 * 60 * 60 * 1000) return;
             AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             if (alarmManager == null) return;
 
@@ -212,6 +250,12 @@ public class MainActivity extends AppCompatActivity {
             } catch (SecurityException ignored) {
                 alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
             }
+        }
+
+        private String safeText(String value, int maxLength) {
+            if (value == null) return "";
+            String clean = value.replaceAll("[\\p{Cntrl}]", " ").trim();
+            return clean.length() > maxLength ? clean.substring(0, maxLength) : clean;
         }
     }
 }
