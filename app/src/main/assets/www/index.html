@@ -2847,7 +2847,7 @@
     const now = Date.now();
     return {
       theme: 'light',
-      selectedDayIndex: 4, // Friday (0=Mon .. 6=Sun)
+      selectedDayIndex: (new Date().getDay() + 6) % 7, // Current weekday (0=Mon .. 6=Sun)
       spotlightIdx: 0,
       taskFilter: 'all',
       habitFilter: 'all',
@@ -3165,14 +3165,18 @@
   // Render 7-Day Ribbon
   function renderWeekRibbon() {
     const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    const nums = [16, 17, 18, 19, 20, 21, 22];
+    const now = new Date();
+    const monday = new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
     const container = document.getElementById('weekRibbon');
-    container.innerHTML = letters.map((l, idx) => `
-      <button class="day-cell ${state.selectedDayIndex === idx ? 'selected' : ''}" onclick="selectWeekDay(${idx})">
-        <span class="day-letter">${l}</span>
-        <span class="day-num">${nums[idx]}</span>
-      </button>
-    `).join('');
+    container.innerHTML = letters.map((label,idx) => {
+      const date = new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+idx);
+      return `
+        <button class="day-cell ${state.selectedDayIndex === idx ? 'selected' : ''}" onclick="selectWeekDay(${idx})" aria-label="${date.toLocaleDateString()}">
+          <span class="day-letter">${label}</span>
+          <span class="day-num">${date.getDate()}</span>
+        </button>
+      `;
+    }).join('');
   }
 
   function selectWeekDay(idx) {
