@@ -3595,6 +3595,79 @@
     showIslandMessage(newTask.reminderAt ? `Reminder set · ${formatTime12(newTask.reminderAt)}` : 'Task Added');
   }
 
+
+  function parseLocalDate(key) {
+    const parts = String(key).split('-').map(Number);
+    return new Date(parts[0],parts[1]-1,parts[2],12,0,0,0);
+  }
+  function formatTaskDate(key) {
+    const d = parseLocalDate(key), today = localDateKey(new Date()), tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate()+1);
+    if (key === today) return 'Today';
+    if (key === localDateKey(tomorrow)) return 'Tomorrow';
+    return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:d.getFullYear()===new Date().getFullYear()?undefined:'numeric'});
+  }
+  function updateNewTaskDateLabel() {
+    const label = document.getElementById('newTaskDateLabel');
+    if (label) label.textContent = formatTaskDate(selectedTaskDate);
+  }
+  function openTaskCalendar(context='newTask') {
+    calendarContext = context;
+    calendarDraftDate = context === 'newTask' ? selectedTaskDate : state.selectedDate;
+    const date = parseLocalDate(calendarDraftDate);
+    calendarMonthCursor = new Date(date.getFullYear(),date.getMonth(),1);
+    renderTaskCalendar();
+    document.getElementById('taskCalendarOverlay').classList.add('open');
+  }
+  function changeCalendarMonth(delta) {
+    calendarMonthCursor = new Date(calendarMonthCursor.getFullYear(),calendarMonthCursor.getMonth()+delta,1);
+    renderTaskCalendar();
+    hapticFeedback();
+  }
+  function renderTaskCalendar() {
+    const monthTitle = document.getElementById('calendarMonthTitle');
+    const grid = document.getElementById('taskCalendarDays');
+    if (!monthTitle || !grid) return;
+    monthTitle.textContent = calendarMonthCursor.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+    const first = new Date(calendarMonthCursor.getFullYear(),calendarMonthCursor.getMonth(),1);
+    const startOffset = (first.getDay()+6)%7;
+    const start = new Date(first.getFullYear(),first.getMonth(),1-startOffset);
+    const todayKey = localDateKey(new Date());
+    grid.innerHTML = Array.from({length:42},(_,i)=>{
+      const d = new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+      const key = localDateKey(d), outside = d.getMonth()!==calendarMonthCursor.getMonth();
+      const selected = key===calendarDraftDate, today = key===todayKey;
+      return \`<button type="button" class="calendar-day \${outside?'outside':''} \${selected?'selected':''} \${today?'today':''}" aria-label="\${d.toLocaleDateString()}" aria-pressed="\${selected}" onclick="chooseCalendarDay('\${key}')">\${d.getDate()}</button>\`;
+    }).join('');
+  }
+  function chooseCalendarDay(key) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return;
+    const d = parseLocalDate(key);
+    if (localDateKey(d)!==key) return;
+    calendarDraftDate = key;
+    calendarMonthCursor = new Date(d.getFullYear(),d.getMonth(),1);
+    renderTaskCalendar();
+    hapticFeedback();
+  }
+  function calendarChooseToday() {
+    calendarDraftDate = localDateKey(new Date());
+    calendarMonthCursor = new Date(new Date().getFullYear(),new Date().getMonth(),1);
+    renderTaskCalendar();
+  }
+  function confirmCalendarDate() {
+    if (calendarContext === 'newTask') {
+      selectedTaskDate = calendarDraftDate;
+      updateNewTaskDateLabel();
+    } else {
+      state.selectedDate = calendarDraftDate;
+      state.selectedDayIndex = (parseLocalDate(calendarDraftDate).getDay()+6)%7;
+      saveState();
+      renderAll();
+    }
+    closeSheet('taskCalendarOverlay');
+    hapticFeedback();
+  }
+
   // ==================== CUSTOM APPLE LIQUID GLASS CLOCK POPUP ====================
   function initClockWheels() {
     const hCol = document.getElementById('wheelHours');
