@@ -3570,7 +3570,7 @@
     const rawTitle = (document.getElementById('newTaskTitleInput').value || '').trim();
     document.getElementById('previewBannerTitle').textContent = rawTitle || 'New Scheduled Task';
     document.getElementById('previewBannerTime').textContent = pendingNewTaskReminderAt
-      ? `Scheduled for ${formatTime12(pendingNewTaskReminderAt)} · ${formatRelativeCountdown(pendingNewTaskReminderAt)}`
+      ? 'Scheduled for ' + formatTaskDate(selectedTaskDate) + ' · ' + formatTime12(pendingNewTaskReminderAt) + ' · ' + formatRelativeCountdown(pendingNewTaskReminderAt)
       : 'Tap Set Time to schedule push alert';
   }
 
@@ -3660,12 +3660,18 @@
   function confirmCalendarDate() {
     if (calendarContext === 'newTask') {
       if (pendingNewTaskReminderAt) {
-        const previousReminder = new Date(pendingNewTaskReminderAt);
-        const selected = parseLocalDate(calendarDraftDate);
-        selected.setHours(previousReminder.getHours(),previousReminder.getMinutes(),0,0);
-        pendingNewTaskReminderAt = selected.getTime();
-        document.getElementById('newTaskReminderSub').textContent = 'Scheduled · ' + formatTaskDate(calendarDraftDate) + ' · ' + formatTime12(pendingNewTaskReminderAt);
-        document.getElementById('newTaskTimeTrigger').textContent = '🔔 ' + formatTime12(pendingNewTaskReminderAt) + ' ⌄';
+        if (calendarDraftDate < localDateKey(new Date())) {
+          pendingNewTaskReminderAt = null;
+          document.getElementById('newTaskReminderSub').textContent = 'Past tasks cannot have a reminder';
+          document.getElementById('newTaskTimeTrigger').textContent = '🔔 Set Time ⌄';
+        } else {
+          const previousReminder = new Date(pendingNewTaskReminderAt);
+          const selected = parseLocalDate(calendarDraftDate);
+          selected.setHours(previousReminder.getHours(),previousReminder.getMinutes(),0,0);
+          pendingNewTaskReminderAt = selected.getTime();
+          document.getElementById('newTaskReminderSub').textContent = 'Scheduled · ' + formatTaskDate(calendarDraftDate) + ' · ' + formatTime12(pendingNewTaskReminderAt);
+          document.getElementById('newTaskTimeTrigger').textContent = '🔔 ' + formatTime12(pendingNewTaskReminderAt) + ' ⌄';
+        }
       }
       selectedTaskDate = calendarDraftDate;
       updateNewTaskDateLabel();
@@ -3956,9 +3962,13 @@
 
   function confirmClockSelection() {
     const targetMs = computeTargetTimestamp();
+    if (clockTargetDateKey < localDateKey(new Date())) {
+      showIslandMessage('Choose a future date for reminder');
+      return;
+    }
     if (clockContext === 'newTask') {
       pendingNewTaskReminderAt = targetMs;
-      document.getElementById('newTaskReminderSub').textContent = `Scheduled · ${formatRelativeCountdown(targetMs)}`;
+      document.getElementById('newTaskReminderSub').textContent = 'Scheduled · ' + formatTaskDate(selectedTaskDate) + ' · ' + formatTime12(targetMs);
       document.getElementById('newTaskTimeTrigger').textContent = `🔔 ${formatTime12(targetMs)} ⌄`;
       updatePushPreview();
     } else {
