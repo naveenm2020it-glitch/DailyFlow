@@ -2430,10 +2430,11 @@
             </div>
             <div class="quick-jot-preview" id="quickJotPreview">Capture a quick thought or reminder for today.</div>
             <form class="quick-jot-form" onsubmit="submitQuickJot(event)">
-              <select class="quick-jot-type" id="quickJotType" aria-label="Choose note type">
-                <option value="Thought">Thought</option>
-                <option value="Idea">Idea</option>
-                <option value="Reminder">Reminder</option>
+              <select class="quick-jot-type" id="quickJotType" aria-label="Choose note type" required>
+                <option value="" selected disabled>Choose type</option>
+                <option value="Thought">💡 Thought</option>
+                <option value="Idea">✨ Idea</option>
+                <option value="Reminder">🔔 Reminder</option>
               </select>
               <input class="quick-jot-input" id="quickJotInput" type="text" placeholder="Write a thought, idea or reminder..." />
               <button class="quick-jot-send" type="submit">↵</button>
@@ -4165,9 +4166,16 @@
     const inp = document.getElementById('quickJotInput');
     const text = (inp.value || '').trim();
     if (!text) return;
-    const type = document.getElementById('quickJotType').value || 'Thought';
+    const typePicker = document.getElementById('quickJotType');
+    const type = typePicker.value;
+    if (!type) {
+      typePicker.focus();
+      showIslandMessage('Choose Thought, Idea or Reminder');
+      return;
+    }
     addNoteItem(text, type);
     inp.value = '';
+    typePicker.value = '';
   }
 
   function submitNoteFromTab(e) {
