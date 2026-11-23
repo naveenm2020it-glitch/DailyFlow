@@ -440,6 +440,12 @@
     display: none;
   }
 
+  /* Keep task content scrollable above the Android keyboard while searching. */
+  body.keyboard-open .main-scroll {
+    padding-bottom: calc(144px + var(--keyboard-inset, 0px));
+    scroll-padding-bottom: calc(var(--keyboard-inset, 0px) + 24px);
+  }
+
   .tab-view {
     display: none;
   }
@@ -4923,6 +4929,32 @@
       }
     }
   }, 1000);
+
+  // Keep task search and the task list accessible when the Android keyboard opens.
+  // The native Android bridge supplies body.keyboard-open and --keyboard-inset.
+  (function bindTaskSearchKeyboardLayout() {
+    const searchInput = document.getElementById('taskSearchInput');
+    const mainScroll = document.querySelector('.main-scroll');
+    if (!searchInput || !mainScroll) return;
+
+    searchInput.addEventListener('focus', () => {
+      document.getElementById('taskSearchDrawer').classList.add('open');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          searchInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+      });
+    });
+
+    searchInput.addEventListener('blur', () => {
+      // Restore the normal scroll space after the IME has closed.
+      window.setTimeout(() => {
+        if (!document.activeElement || document.activeElement !== searchInput) {
+          mainScroll.scrollTop = mainScroll.scrollTop;
+        }
+      }, 180);
+    });
+  })();
 
   // Keep the Notes composer visible when the Android keyboard opens.
   // The native Android bridge sets --keyboard-inset from WindowInsetsCompat IME.
