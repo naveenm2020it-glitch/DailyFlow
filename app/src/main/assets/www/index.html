@@ -2963,14 +2963,20 @@
   // Migrate legacy habit data without discarding the last known day's values.
   if (!Array.isArray(state.habits)) state.habits = [];
   if (!state.habitDailyLog || typeof state.habitDailyLog !== 'object' || Array.isArray(state.habitDailyLog)) state.habitDailyLog = {};
-  if (!state.habitProgressDate) state.habitProgressDate = getLocalHabitDateKey();
-  if (state.habitProgressDate !== getLocalHabitDateKey()) {
+  if (!state.habitProgressDate) {
+    // Legacy records without a date cannot safely be assigned to today.
+    state.habits.forEach(h => { h.current = 0; });
+    state.habitProgressDate = getLocalHabitDateKey();
+  } else if (state.habitProgressDate !== getLocalHabitDateKey()) {
+    // Preserve the last known date before resetting today's counters.
     state.habitDailyLog[state.habitProgressDate] = Object.fromEntries(
       state.habits.map(h => [h.id, Math.max(0, Number(h.current) || 0)])
     );
     state.habits.forEach(h => { h.current = 0; });
     state.habitProgressDate = getLocalHabitDateKey();
-    state.habitDailyLog[state.habitProgressDate] = Object.fromEntries(state.habits.map(h => [h.id, 0]));
+  }
+  if (!state.habitDailyLog[state.habitProgressDate]) {
+    state.habitDailyLog[state.habitProgressDate] = Object.fromEntries(state.habits.map(h => [h.id, Math.max(0, Number(h.current) || 0)]));
   }
   SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
 
