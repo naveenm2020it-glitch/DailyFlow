@@ -2007,16 +2007,147 @@
     outline: none;
   }
 
-  .sheet-date-input {
+  .sheet-date-trigger {
     width: 100%;
-    min-height: 27px;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0;
     border: 0;
-    outline: none;
     background: transparent;
     color: var(--text-primary);
-    font: 600 15px inherit;
-    color-scheme: light dark;
+    font-size: 15px;
+    font-weight: 650;
+    text-align: left;
     cursor: pointer;
+  }
+
+  .sheet-date-trigger .date-trigger-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .sheet-date-trigger .date-trigger-icon {
+    color: var(--accent-blue);
+    font-size: 19px;
+  }
+
+  .calendar-modal {
+    width: min(100%, 390px);
+    padding: 20px 18px 16px;
+    border-radius: 30px;
+    background: var(--glass-bg-elevated);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 22px 70px rgba(0,0,0,0.24);
+    backdrop-filter: blur(34px) saturate(180%);
+    -webkit-backdrop-filter: blur(34px) saturate(180%);
+  }
+
+  .calendar-month-row {
+    display: grid;
+    grid-template-columns: 42px 1fr 42px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .calendar-nav-btn {
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--glass-inset);
+    color: var(--text-secondary);
+    font-size: 23px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .calendar-month-title {
+    justify-self: center;
+    padding: 8px 20px;
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 750;
+  }
+
+  .calendar-weekdays,
+  .calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    text-align: center;
+  }
+
+  .calendar-weekdays {
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 8px;
+  }
+
+  .calendar-weekday {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: .02em;
+  }
+
+  .calendar-day {
+    justify-self: center;
+    width: 38px;
+    height: 42px;
+    margin: 2px 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 550;
+    cursor: pointer;
+  }
+
+  .calendar-day.weekend { color: var(--text-tertiary); }
+  .calendar-day.outside { color: var(--text-tertiary); opacity: .45; }
+  .calendar-day.today:not(.selected) {
+    box-shadow: inset 0 0 0 1.5px var(--accent-blue);
+    color: var(--accent-blue);
+    font-weight: 750;
+  }
+  .calendar-day.selected {
+    background: var(--accent-blue);
+    color: #FFF;
+    box-shadow: 0 4px 12px rgba(0,122,255,.24);
+  }
+
+  .calendar-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 14px;
+    margin-top: 10px;
+    border-top: 1px solid var(--glass-border);
+  }
+
+  .calendar-footer button {
+    min-height: 38px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--glass-inset);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .calendar-footer .calendar-done {
+    background: var(--accent-blue);
+    color: #FFF;
   }
 
   .chip-grid {
@@ -2761,8 +2892,12 @@
       </div>
 
       <div class="inset-group">
-        <label class="inset-label" for="newTaskDateInput">Task Date</label>
-        <input class="sheet-date-input" id="newTaskDateInput" type="date" aria-label="Select task date" />
+        <label class="inset-label">Task Date</label>
+        <input id="newTaskDateInput" type="hidden" />
+        <button class="sheet-date-trigger" id="newTaskDateTrigger" type="button" onclick="openTaskCalendar()">
+          <span class="date-trigger-value"><span class="date-trigger-icon">▦</span><span id="newTaskDateLabel">Today</span></span>
+          <span style="color:var(--accent-blue);font-size:12px;font-weight:700;">Change ›</span>
+        </button>
       </div>
 
       <div class="inset-group">
@@ -2808,6 +2943,26 @@
       </div>
 
       <button class="sheet-submit-btn" onclick="createNewTask()">Add Task</button>
+    </div>
+  </div>
+
+  <!-- ==================== iOS STYLE TASK DATE CALENDAR ==================== -->
+  <div class="sheet-overlay center" id="taskCalendarOverlay" onclick="closeSheetOnBg(event, 'taskCalendarOverlay')">
+    <div class="calendar-modal" role="dialog" aria-modal="true" aria-label="Choose task date">
+      <div class="calendar-month-row">
+        <button class="calendar-nav-btn" type="button" onclick="changeTaskCalendarMonth(-1)" aria-label="Previous month">‹</button>
+        <div class="calendar-month-title" id="taskCalendarMonthTitle">Month</div>
+        <button class="calendar-nav-btn" type="button" onclick="changeTaskCalendarMonth(1)" aria-label="Next month">›</button>
+      </div>
+      <div class="calendar-weekdays">
+        <span class="calendar-weekday">MON</span><span class="calendar-weekday">TUE</span><span class="calendar-weekday">WED</span><span class="calendar-weekday">THU</span><span class="calendar-weekday">FRI</span><span class="calendar-weekday">SAT</span><span class="calendar-weekday">SUN</span>
+      </div>
+      <div class="calendar-days" id="taskCalendarDays"></div>
+      <div class="calendar-footer">
+        <button type="button" onclick="cancelTaskCalendar()">Cancel</button>
+        <button type="button" onclick="selectTodayInTaskCalendar()">Today</button>
+        <button type="button" class="calendar-done" onclick="confirmTaskCalendarDate()">Done</button>
+      </div>
     </div>
   </div>
 
@@ -3686,6 +3841,83 @@
     showIslandMessage('Task deleted', true);
   }
 
+  // ==================== iOS STYLE TASK DATE CALENDAR ====================
+  let taskCalendarCursor = new Date();
+  let taskCalendarSelected = new Date();
+
+  function parseLocalDateKey(value) {
+    const parts = String(value || '').split('-').map(Number);
+    if (parts.length !== 3 || parts.some(Number.isNaN)) return new Date();
+    return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
+  }
+
+  function localDateKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  function formatTaskDateLabel(date) {
+    const today = new Date();
+    if (localDateKey(date) === localDateKey(today)) return 'Today · ' + date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric' });
+  }
+
+  function openTaskCalendar() {
+    const current = document.getElementById('newTaskDateInput').value;
+    taskCalendarSelected = current ? parseLocalDateKey(current) : new Date();
+    taskCalendarCursor = new Date(taskCalendarSelected.getFullYear(), taskCalendarSelected.getMonth(), 1, 12);
+    renderTaskCalendar();
+    document.getElementById('taskCalendarOverlay').classList.add('open');
+  }
+
+  function changeTaskCalendarMonth(delta) {
+    taskCalendarCursor = new Date(taskCalendarCursor.getFullYear(), taskCalendarCursor.getMonth() + delta, 1, 12);
+    renderTaskCalendar();
+  }
+
+  function renderTaskCalendar() {
+    const y = taskCalendarCursor.getFullYear();
+    const m = taskCalendarCursor.getMonth();
+    document.getElementById('taskCalendarMonthTitle').textContent = taskCalendarCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    const first = new Date(y, m, 1, 12);
+    const offset = (first.getDay() + 6) % 7;
+    const start = new Date(y, m, 1 - offset, 12);
+    const selectedKey = localDateKey(taskCalendarSelected);
+    const todayKey = localDateKey(new Date());
+    const days = Array.from({ length: 42 }, (_, idx) => {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + idx, 12);
+      const key = localDateKey(d);
+      const outside = d.getMonth() !== m;
+      const weekend = d.getDay() === 0 || d.getDay() === 6;
+      const classes = ['calendar-day', outside ? 'outside' : '', weekend ? 'weekend' : '', key === todayKey ? 'today' : '', key === selectedKey ? 'selected' : ''].filter(Boolean).join(' ');
+      return `<button type="button" class="${classes}" onclick="selectTaskCalendarDay('${key}')" aria-label="${d.toLocaleDateString(undefined, { dateStyle: 'full' })}" aria-pressed="${key === selectedKey}">${d.getDate()}</button>`;
+    }).join('');
+    document.getElementById('taskCalendarDays').innerHTML = days;
+  }
+
+  function selectTaskCalendarDay(key) {
+    taskCalendarSelected = parseLocalDateKey(key);
+    taskCalendarCursor = new Date(taskCalendarSelected.getFullYear(), taskCalendarSelected.getMonth(), 1, 12);
+    renderTaskCalendar();
+    hapticFeedback();
+  }
+
+  function selectTodayInTaskCalendar() {
+    taskCalendarSelected = new Date();
+    taskCalendarCursor = new Date(taskCalendarSelected.getFullYear(), taskCalendarSelected.getMonth(), 1, 12);
+    renderTaskCalendar();
+  }
+
+  function cancelTaskCalendar() {
+    closeSheet('taskCalendarOverlay');
+  }
+
+  function confirmTaskCalendarDate() {
+    const input = document.getElementById('newTaskDateInput');
+    input.value = localDateKey(taskCalendarSelected);
+    document.getElementById('newTaskDateLabel').textContent = formatTaskDateLabel(taskCalendarSelected);
+    closeSheet('taskCalendarOverlay');
+  }
+
   // New Task Sheet Logic
   function openNewTaskSheet() {
     pendingNewTaskReminderAt = null;
@@ -3694,7 +3926,8 @@
     document.getElementById('newTaskTitleInput').value = '';
     const taskDateInput = document.getElementById('newTaskDateInput');
     const now = new Date();
-    taskDateInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    taskDateInput.value = localDateKey(now);
+    document.getElementById('newTaskDateLabel').textContent = formatTaskDateLabel(now);
     document.getElementById('newTaskReminderSub').textContent = 'No alert scheduled';
     document.getElementById('newTaskTimeTrigger').textContent = '🔔 Set Time ⌄';
     selectNewTaskCat('Work');
