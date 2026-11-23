@@ -3177,7 +3177,10 @@
     });
     const habitPct = state.habits.length === 0 ? 0 : Math.round((habitRatioSum / state.habits.length) * 100);
 
-    const flowPct = Math.round((taskPct + habitPct) / 2);
+    // Completion is intentionally limited to Tasks and Habits.
+    // Notes are independent journal content and must never affect any completion ring.
+    const completionParts = [taskPct, habitPct];
+    const flowPct = Math.round(completionParts.reduce((sum, pct) => sum + pct, 0) / completionParts.length);
     const bestStreak = state.habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
     const activeReminders = state.tasks.filter(t => !t.done && t.reminderAt).length;
 
@@ -4376,8 +4379,9 @@
       `;
     }).join('');
 
-    // Daily Balance Donut
-    const totalShare = Math.max(1, m.taskPct + m.habitPct);
+    // Daily Balance Donut: Tasks + Habits only; Notes are deliberately excluded.
+    const trackedCompletionTotal = m.taskPct + m.habitPct;
+    const totalShare = Math.max(1, trackedCompletionTotal);
     const tFrac = m.taskPct / totalShare;
     const hFrac = m.habitPct / totalShare;
     const C = 251.3;
