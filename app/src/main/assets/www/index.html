@@ -2007,6 +2007,18 @@
     outline: none;
   }
 
+  .sheet-date-input {
+    width: 100%;
+    min-height: 27px;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    font: 600 15px inherit;
+    color-scheme: light dark;
+    cursor: pointer;
+  }
+
   .chip-grid {
     display: flex;
     flex-wrap: wrap;
@@ -2746,6 +2758,11 @@
       <div class="inset-group">
         <label class="inset-label">Task Title</label>
         <input class="sheet-input" id="newTaskTitleInput" type="text" placeholder="e.g., Ship Daily Flow APK build" oninput="updatePushPreview()" />
+      </div>
+
+      <div class="inset-group">
+        <label class="inset-label" for="newTaskDateInput">Task Date</label>
+        <input class="sheet-date-input" id="newTaskDateInput" type="date" aria-label="Select task date" />
       </div>
 
       <div class="inset-group">
@@ -3550,6 +3567,16 @@
       const timeHtml = t.reminderAt
         ? `<span class="task-time-pill" onclick="openClockForTask('${t.id}')">🔔 ${formatTime12(t.reminderAt)} · ${formatRelativeCountdown(t.reminderAt)}</span>`
         : '';
+      const taskDateValue = t.taskDate || '';
+      const taskDate = taskDateValue
+        ? new Date(taskDateValue + 'T12:00:00')
+        : null;
+      const taskDateLabel = taskDate && !Number.isNaN(taskDate.getTime())
+        ? taskDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: taskDate.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' })
+        : '';
+      const taskDateHtml = taskDateLabel
+        ? `<span class="task-time-pill" style="cursor:default;">📅 ${taskDateLabel}</span>`
+        : '';
       return `
         <div class="task-swipe-wrapper" id="swipe-wrap-${t.id}"
              ontouchstart="onTaskTouchStart(event, '${t.id}')"
@@ -3571,6 +3598,7 @@
               <div class="task-meta-row">
                 <span class="cat-pill" style="color:${c.fg};background:${c.bg};">${t.category}</span>
                 ${prioHtml}
+                ${taskDateHtml}
                 ${timeHtml}
               </div>
             </div>
@@ -3664,6 +3692,9 @@
     newTaskCat = 'Work';
     newTaskPrio = 'None';
     document.getElementById('newTaskTitleInput').value = '';
+    const taskDateInput = document.getElementById('newTaskDateInput');
+    const now = new Date();
+    taskDateInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     document.getElementById('newTaskReminderSub').textContent = 'No alert scheduled';
     document.getElementById('newTaskTimeTrigger').textContent = '🔔 Set Time ⌄';
     selectNewTaskCat('Work');
@@ -3713,6 +3744,7 @@
       title,
       category: newTaskCat,
       priority: newTaskPrio,
+      taskDate: document.getElementById('newTaskDateInput').value,
       done: false,
       reminderAt: pendingNewTaskReminderAt,
       notified: false
