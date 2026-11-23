@@ -2853,13 +2853,49 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
-  // Start a fresh daily count when the local date changes. Habit definitions
-  // and streak totals are preserved; only today's completion counters reset.
+  // Daily habit history is stored by local calendar date and habit ID.
+  // This prevents yesterday's completion from appearing as today's progress.
+  function getHabitDateKey(date) {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  function getHabitCountsForDate(dateKey) {
+    if (dateKey === state.habitProgressDate) {
+      return Object.fromEntries(state.habits.map(h => [h.id, Math.max(0, Number(h.current) || 0)]));
+    }
+    const saved = state.habitDailyLog && state.habitDailyLog[dateKey];
+    return saved && typeof saved === 'object' ? saved : {};
+  }
+
+  function getHabitCompletionForDate(dateKey) {
+    if (!state.habits.length) return 0;
+    const counts = getHabitCountsForDate(dateKey);
+    const total = state.habits.reduce((sum, h) => sum + Math.min(1, (Number(counts[h.id]) || 0) / Math.max(1, Number(h.target) || 1)), 0);
+    return Math.round((total / state.habits.length) * 100);
+  }
+
+  function saveCurrentHabitDay() {
+    if (!state.habitProgressDate) return;
+    if (!state.habitDailyLog || typeof state.habitDailyLog !== 'object') state.habitDailyLog = {};
+    state.habitDailyLog[state.habitProgressDate] = Object.fromEntries(
+      state.habits.map(h => [h.id, Math.max(0, Number(h.current) || 0)])
+    );
+  }
+
+  // On date rollover, archive the completed day before starting (or restoring)
+  // the new day's counts. Reopening the app cannot relabel Friday as today.
   function ensureCurrentHabitDate() {
     const todayKey = getLocalHabitDateKey();
     if (state.habitProgressDate === todayKey) return false;
-    state.habits.forEach(h => { h.current = 0; });
+    saveCurrentHabitDay();
+    if (!state.habitDailyLog || typeof state.habitDailyLog !== 'object') state.habitDailyLog = {};
+    state.habits.forEach(h => {
+      const saved = state.habitDailyLog[todayKey];
+      h.current = Math.max(0, Math.min(Number(h.target) || 1, Number(saved && saved[h.id]) || 0));
+    });
     state.habitProgressDate = todayKey;
+    saveCurrentHabitDay();
     saveState();
     return true;
   }
@@ -2924,19 +2960,19 @@
     return getDefaultState();
   })();
 
-  // Migrate older saved data and prevent a previous day's count appearing as today.
-  if (!state.habitProgressDate) {
+  // Migrate legacy habit data without discarding the last known day's values.
+  if (!Array.isArray(state.habits)) state.habits = [];
+  if (!state.habitDailyLog || typeof state.habitDailyLog !== 'object' || Array.isArray(state.habitDailyLog)) state.habitDailyLog = {};
+  if (!state.habitProgressDate) state.habitProgressDate = getLocalHabitDateKey();
+  if (state.habitProgressDate !== getLocalHabitDateKey()) {
+    state.habitDailyLog[state.habitProgressDate] = Object.fromEntries(
+      state.habits.map(h => [h.id, Math.max(0, Number(h.current) || 0)])
+    );
     state.habits.forEach(h => { h.current = 0; });
     state.habitProgressDate = getLocalHabitDateKey();
-    SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
-  } else {
-    const todayHabitDate = getLocalHabitDateKey();
-    if (state.habitProgressDate !== todayHabitDate) {
-      state.habits.forEach(h => { h.current = 0; });
-      state.habitProgressDate = todayHabitDate;
-      SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
-    }
+    state.habitDailyLog[state.habitProgressDate] = Object.fromEntries(state.habits.map(h => [h.id, 0]));
   }
+  SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
 
   function saveState() {
     SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
@@ -3927,6 +3963,7 @@
     const h = state.habits.find(x => x.id === id);
     if (!h) return;
     h.current = Math.max(0, Math.min(h.target, h.current + delta));
+    saveCurrentHabitDay();
     saveState();
     renderAll();
     hapticFeedback();
@@ -3977,11 +4014,19 @@
     list.innerHTML = filtered.map(h => {
       const pct = Math.min(100, Math.round((h.current / Math.max(1, h.target)) * 100));
       const isDone = h.current >= h.target;
-      // Show this habit's live completion under the actual local weekday.
-      const todayWeekday = (new Date().getDay() + 6) % 7;
+      // Render real saved completion for each weekday, not a copy of today's value.
+      const now = new Date();
+      const mondayOffset = (now.getDay() + 6) % 7;
+      const weekStart = new Date(now);
+      weekStart.setHours(12, 0, 0, 0);
+      weekStart.setDate(now.getDate() - mondayOffset);
       const dotsHtml = [0,1,2,3,4,5,6].map(idx => {
-        const dotH = idx === todayWeekday ? pct : 0;
-        return `<div class="habit-dot"><div class="habit-dot-fill" style="height:${dotH}%"></div></div>`;
+        const day = new Date(weekStart);
+        day.setDate(weekStart.getDate() + idx);
+        const key = getHabitDateKey(day);
+        const counts = getHabitCountsForDate(key);
+        const dotPct = Math.min(100, Math.round(((Number(counts[h.id]) || 0) / Math.max(1, h.target)) * 100));
+        return `<div class="habit-dot"><div class="habit-dot-fill" style="height:${dotPct}%"></div></div>`;
       }).join('');
 
       return `
@@ -4293,19 +4338,27 @@
     document.getElementById('heatmapTodayBadge').textContent = `${m.habitPct}% Today`;
 
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const todayWeekday = (new Date().getDay() + 6) % 7;
+    const today = new Date();
+    const todayWeekday = (today.getDay() + 6) % 7;
+    const weekStart = new Date(today);
+    weekStart.setHours(12, 0, 0, 0);
+    weekStart.setDate(today.getDate() - todayWeekday);
     document.getElementById('progressFlowBars').innerHTML = days.map((d, idx) => {
+      const day = new Date(weekStart);
+      day.setDate(weekStart.getDate() + idx);
+      const key = getHabitDateKey(day);
+      const value = getHabitCompletionForDate(key);
       const isToday = idx === todayWeekday;
-      const hPx = isToday ? Math.max(12, Math.round((m.flowPct / 100) * 86)) : 12;
+      const hPx = Math.max(4, Math.round((value / 100) * 86));
       return `
-        <div class="flow-bar-col">
+        <div class="flow-bar-col" title="${d}: ${value}% habit completion">
           <div class="flow-bar-pill ${isToday ? 'today' : ''}" style="height:${hPx}px;"></div>
           <span class="flow-bar-lbl">${d}</span>
         </div>
       `;
     }).join('');
 
-    // Rolling 28-day window: 18 days before today, today, and 9 days ahead.
+    // Rolling 28-day heatmap: display saved daily habit completion for past dates.
     const todayIdx = 18;
     selectedHeatmapIdx = todayIdx;
     const today = new Date();
@@ -4318,7 +4371,8 @@
       const cellDate = new Date(gridStart);
       cellDate.setDate(gridStart.getDate() + idx);
       const dayNum = cellDate.getDate();
-      const fillPct = isToday ? m.habitPct : 0;
+      const dateKey = getHabitDateKey(cellDate);
+      const fillPct = getHabitCompletionForDate(dateKey);
       return `
         <div class="heat-cell ${isToday ? 'today-cell' : ''}" onclick="selectHeatmapCell(${idx}, ${dayNum}, ${fillPct})">
           <div class="heat-fill" style="height:${fillPct}%;"></div>
@@ -4353,7 +4407,7 @@
 
   function selectHeatmapCell(idx, dayNum, fillPct) {
     selectedHeatmapIdx = idx;
-    const status = idx < 18 ? 'Past · Blank' : idx > 18 ? 'Future · Blank' : `Today · ${fillPct}%`;
+    const status = idx < 18 ? `Past · ${fillPct}%` : idx > 18 ? 'Future · No data' : `Today · ${fillPct}%`;
     const selectedDate = new Date();
     selectedDate.setHours(12, 0, 0, 0);
     selectedDate.setDate(selectedDate.getDate() + (idx - 18));
