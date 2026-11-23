@@ -2523,10 +2523,10 @@
         </div>
       </div>
 
-      <!-- 7-Day Flow Score -->
+      <!-- 7-Day Habit Consistency -->
       <div class="glass-card analytics-card">
         <div class="analytics-head">
-          <span class="analytics-title">7-Day Flow Score</span>
+          <span class="analytics-title">7-Day Habit Consistency</span>
           <span class="analytics-badge" id="flowScoreBadge">Today · 0%</span>
         </div>
         <div class="flow-bars-grid" id="progressFlowBars"></div>
@@ -4334,7 +4334,7 @@
   // ==================== PROGRESS VIEW (Plain Past/Future; Blank/Half/Full Green Today) ====================
   function renderProgress() {
     const m = getMetrics();
-    document.getElementById('flowScoreBadge').textContent = `Today · ${m.flowPct}%`;
+    document.getElementById('flowScoreBadge').textContent = `Today · ${m.habitPct}%`;
     document.getElementById('heatmapTodayBadge').textContent = `${m.habitPct}% Today`;
 
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
