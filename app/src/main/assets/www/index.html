@@ -2027,6 +2027,68 @@
     background: var(--accent-red);
   }
 
+  .habit-days-row {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .habit-day-chip {
+    min-width: 0;
+    height: 34px;
+    border: 1px solid var(--glass-hairline);
+    border-radius: 11px;
+    background: var(--pill-active-bg);
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+
+  .habit-day-chip.active {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: #FFF;
+  }
+
+  .habit-day-chip:active {
+    transform: scale(0.94);
+  }
+
+  .habit-days-hint {
+    margin-top: 8px;
+    color: var(--text-tertiary);
+    font-size: 10.5px;
+    line-height: 1.35;
+  }
+
+  .habit-rest-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 11px;
+    border-radius: 999px;
+    background: var(--glass-inset);
+    color: var(--text-tertiary);
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+
+  .flow-bar-pill.rest-day {
+    background: transparent;
+    border: 1px dashed var(--blank-cell-border);
+  }
+
+  .heat-cell.rest-day {
+    background: transparent;
+    border-style: dashed;
+  }
+
+  .habit-dot.rest-day {
+    background: transparent;
+    border-style: dashed;
+  }
+
   /* CUSTOM APPLE LIQUID GLASS CLOCK POPUP */
   .clock-modal {
     width: 100%;
@@ -2766,6 +2828,12 @@
       </div>
 
       <div class="inset-group">
+        <label class="inset-label">Repeat on</label>
+        <div class="habit-days-row" id="habitDaysPicker"></div>
+        <div class="habit-days-hint" id="habitDaysSummary">Every day · Choose the days you want to follow this ritual</div>
+      </div>
+
+      <div class="inset-group">
         <label class="inset-label">Icon & Accent</label>
         <div class="swatch-row" id="habitIconSwatches" style="margin-bottom:10px;"></div>
         <div class="swatch-row" id="habitColorSwatches"></div>
@@ -2861,11 +2929,48 @@
     return saved && typeof saved === 'object' ? saved : {};
   }
 
+  function getHabitScheduledDays(habit) {
+    const days = Array.isArray(habit && habit.scheduledDays)
+      ? habit.scheduledDays
+      : [0, 1, 2, 3, 4, 5, 6];
+    return [...new Set(days.map(Number).filter(day => Number.isInteger(day) && day >= 0 && day <= 6))].sort((a, b) => a - b);
+  }
+
+  function isHabitScheduledForDate(habit, dateValue) {
+    const date = dateValue instanceof Date ? dateValue : new Date(`${dateValue}T12:00:00`);
+    if (Number.isNaN(date.getTime())) return true;
+    const mondayFirstDay = (date.getDay() + 6) % 7;
+    return getHabitScheduledDays(habit).includes(mondayFirstDay);
+  }
+
+  function renderHabitDaysPicker() {
+    const picker = document.getElementById('habitDaysPicker');
+    picker.innerHTML = HABIT_WEEKDAYS.map((day, idx) => {
+      const active = newHabitDays.includes(idx);
+      const fullName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][idx];
+      return `<button type="button" class="habit-day-chip ${active ? 'active' : ''}" onclick="toggleHabitScheduledDay(${idx})" aria-label="${fullName}" aria-pressed="${active}">${day}</button>`;
+    }).join('');
+    const selected = newHabitDays.map(day => HABIT_WEEKDAYS[day]);
+    document.getElementById('habitDaysSummary').textContent = newHabitDays.length === 7
+      ? 'Every day · This ritual repeats all week'
+      : `${selected.join(', ')} · ${newHabitDays.length} of 7 days selected`;
+  }
+
+  function toggleHabitScheduledDay(day) {
+    newHabitDays = newHabitDays.includes(day)
+      ? newHabitDays.filter(value => value !== day)
+      : [...newHabitDays, day].sort((a, b) => a - b);
+    renderHabitDaysPicker();
+    hapticFeedback();
+  }
+
   function getHabitCompletionForDate(dateKey) {
     if (!state.habits.length) return 0;
+    const dueHabits = state.habits.filter(h => isHabitScheduledForDate(h, dateKey));
+    if (!dueHabits.length) return null; // Rest day: no habit is due.
     const counts = getHabitCountsForDate(dateKey);
-    const total = state.habits.reduce((sum, h) => sum + Math.min(1, (Number(counts[h.id]) || 0) / Math.max(1, Number(h.target) || 1)), 0);
-    return Math.round((total / state.habits.length) * 100);
+    const total = dueHabits.reduce((sum, h) => sum + Math.min(1, (Number(counts[h.id]) || 0) / Math.max(1, Number(h.target) || 1)), 0);
+    return Math.round((total / dueHabits.length) * 100);
   }
 
   function saveCurrentHabitDay() {
@@ -2986,6 +3091,8 @@
   let newHabitUnit = 'times';
   let newHabitIcon = 'drop';
   let newHabitColor = '#007AFF';
+  let newHabitDays = [0, 1, 2, 3, 4, 5, 6]; // Monday=0 ... Sunday=6
+  const HABIT_WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   let habitToDeleteId = null;
   let lastDeletedBackup = null;
   let undoTimer = null;
@@ -3171,20 +3278,24 @@
     const doneTasks = state.tasks.filter(t => t.done).length;
     const taskPct = totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
 
+    const dueHabits = state.habits.filter(h => isHabitScheduledForDate(h, new Date()));
     let habitRatioSum = 0;
-    state.habits.forEach(h => {
+    dueHabits.forEach(h => {
       habitRatioSum += Math.min(1, h.current / Math.max(1, h.target));
     });
-    const habitPct = state.habits.length === 0 ? 0 : Math.round((habitRatioSum / state.habits.length) * 100);
+    const habitPct = dueHabits.length === 0 ? 0 : Math.round((habitRatioSum / dueHabits.length) * 100);
 
-    // Completion is intentionally limited to Tasks and Habits.
-    // Notes are independent journal content and must never affect any completion ring.
-    const completionParts = [taskPct, habitPct];
+    // Completion is intentionally limited to Tasks and scheduled Habits.
+    // Notes are independent journal content and never affect any completion ring.
+    // On a full habit rest day, omit the habit component instead of penalizing the score.
+    const completionParts = state.habits.length > 0 && dueHabits.length === 0
+      ? [taskPct]
+      : [taskPct, habitPct];
     const flowPct = Math.round(completionParts.reduce((sum, pct) => sum + pct, 0) / completionParts.length);
     const bestStreak = state.habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
     const activeReminders = state.tasks.filter(t => !t.done && t.reminderAt).length;
 
-    return { totalTasks, doneTasks, taskPct, habitPct, flowPct, bestStreak, activeReminders };
+    return { totalTasks, doneTasks, taskPct, habitPct, flowPct, bestStreak, activeReminders, dueHabitCount: dueHabits.length };
   }
 
   // Render 7-Day Ribbon
@@ -3290,7 +3401,8 @@
   // Render Today Daily Rituals 2-Col Matrix
   function renderTodayRituals() {
     const grid = document.getElementById('todayRitualMatrix');
-    const cards = state.habits.slice(0, 4).map(h => {
+    const dueHabits = state.habits.filter(h => isHabitScheduledForDate(h, new Date()));
+    const cards = dueHabits.slice(0, 4).map(h => {
       const pct = Math.min(100, Math.round((h.current / Math.max(1, h.target)) * 100));
       return `
         <div class="glass-card ritual-tile" onclick="stepHabit('${h.id}', 1)">
@@ -3307,6 +3419,15 @@
         </div>
       `;
     });
+    if (dueHabits.length === 0) {
+      cards.push(`
+        <div class="glass-card ritual-tile" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:default;">
+          <span style="font-size:20px;color:var(--accent-green);">✓</span>
+          <span style="font-size:12.5px;font-weight:600;color:var(--text-secondary);margin-top:2px;">Rest day</span>
+          <span style="font-size:10.5px;color:var(--text-tertiary);margin-top:2px;">No rituals due today</span>
+        </div>
+      `);
+    }
     if (cards.length < 4) {
       cards.push(`
         <div class="glass-card ritual-tile" style="display:flex;flex-direction:column;align-items:center;justify-content:center;border-style:dashed;" onclick="openNewHabitSheet()">
@@ -3961,6 +4082,10 @@
     ensureCurrentHabitDate();
     const h = state.habits.find(x => x.id === id);
     if (!h) return;
+    if (!isHabitScheduledForDate(h, new Date())) {
+      showIslandMessage('This ritual is not scheduled today');
+      return;
+    }
     h.current = Math.max(0, Math.min(h.target, h.current + delta));
     saveCurrentHabitDay();
     saveState();
@@ -4013,6 +4138,7 @@
     list.innerHTML = filtered.map(h => {
       const pct = Math.min(100, Math.round((h.current / Math.max(1, h.target)) * 100));
       const isDone = h.current >= h.target;
+      const isScheduledToday = isHabitScheduledForDate(h, new Date());
       // Render real saved completion for each weekday, not a copy of today's value.
       const now = new Date();
       const mondayOffset = (now.getDay() + 6) % 7;
@@ -4024,8 +4150,9 @@
         day.setDate(weekStart.getDate() + idx);
         const key = getHabitDateKey(day);
         const counts = getHabitCountsForDate(key);
-        const dotPct = Math.min(100, Math.round(((Number(counts[h.id]) || 0) / Math.max(1, h.target)) * 100));
-        return `<div class="habit-dot"><div class="habit-dot-fill" style="height:${dotPct}%"></div></div>`;
+        const scheduled = isHabitScheduledForDate(h, day);
+        const dotPct = scheduled ? Math.min(100, Math.round(((Number(counts[h.id]) || 0) / Math.max(1, h.target)) * 100)) : 0;
+        return `<div class="habit-dot ${scheduled ? '' : 'rest-day'}" title="${HABIT_WEEKDAYS[idx]}: ${scheduled ? dotPct + '% completed' : 'Rest day'}"><div class="habit-dot-fill" style="height:${dotPct}%"></div></div>`;
       }).join('');
 
       return `
@@ -4049,13 +4176,15 @@
           </div>
           <div class="habit-card-bottom">
             <div class="habit-dots-row">${dotsHtml}</div>
-            ${isDone
-              ? `<span class="completed-pill" onclick="stepHabit('${h.id}', -1)">Completed ✓</span>`
-              : `<div class="stepper-pill">
-                   <button class="step-btn" onclick="stepHabit('${h.id}', -1)">−</button>
-                   <span class="step-val">${h.current}/${h.target}</span>
-                   <button class="step-btn" onclick="stepHabit('${h.id}', 1)">+</button>
-                 </div>`
+            ${!isScheduledToday
+              ? `<span class="habit-rest-tag">Rest day today</span>`
+              : isDone
+                ? `<span class="completed-pill" onclick="stepHabit('${h.id}', -1)">Completed ✓</span>`
+                : `<div class="stepper-pill">
+                     <button class="step-btn" onclick="stepHabit('${h.id}', -1)">−</button>
+                     <span class="step-val">${h.current}/${h.target}</span>
+                     <button class="step-btn" onclick="stepHabit('${h.id}', 1)">+</button>
+                   </div>`
             }
           </div>
         </div>
@@ -4071,9 +4200,11 @@
     newHabitUnit = 'times';
     newHabitIcon = 'drop';
     newHabitColor = '#007AFF';
+    newHabitDays = [0, 1, 2, 3, 4, 5, 6];
     document.getElementById('newHabitNameInput').value = '';
     document.getElementById('newHabitTargetVal').textContent = '8';
     selectHabitUnit('times');
+    renderHabitDaysPicker();
     renderHabitSwatches();
     document.getElementById('newHabitSheet').classList.add('open');
   }
@@ -4110,11 +4241,13 @@
     newHabitUnit = habit.unit || 'times';
     newHabitIcon = habit.icon || 'drop';
     newHabitColor = habit.color || '#007AFF';
+    newHabitDays = getHabitScheduledDays(habit);
     document.getElementById('newHabitNameInput').value = habit.name || '';
     document.getElementById('newHabitTargetVal').textContent = String(newHabitTarget);
     document.getElementById('habitSheetTitle').textContent = 'Edit Daily Ritual';
     document.getElementById('habitSaveButton').textContent = 'Save Changes';
     selectHabitUnit(newHabitUnit);
+    renderHabitDaysPicker();
     renderHabitSwatches();
     document.getElementById('newHabitSheet').classList.add('open');
     hapticFeedback();
@@ -4128,6 +4261,10 @@
       return;
     }
     const name = raw;
+    if (!newHabitDays.length) {
+      showIslandMessage('Select at least one day');
+      return;
+    }
     if (editingHabitId) {
       const habit = state.habits.find(x => x.id === editingHabitId);
       if (!habit) return;
@@ -4136,6 +4273,7 @@
       habit.unit = newHabitUnit;
       habit.icon = newHabitIcon;
       habit.color = newHabitColor;
+      habit.scheduledDays = [...newHabitDays];
       // Keep habit.current and habit.streak untouched so edits never erase progress.
       editingHabitId = null;
       saveState();
@@ -4153,7 +4291,8 @@
       unit: newHabitUnit,
       streak: 0,
       icon: newHabitIcon,
-      color: newHabitColor
+      color: newHabitColor,
+      scheduledDays: [...newHabitDays]
     });
     saveState();
     closeSheet('newHabitSheet');
@@ -4347,11 +4486,13 @@
       day.setDate(weekStart.getDate() + idx);
       const key = getHabitDateKey(day);
       const value = getHabitCompletionForDate(key);
+      const isRestDay = value === null;
+      const displayValue = isRestDay ? 0 : value;
       const isToday = idx === todayWeekday;
-      const hPx = Math.max(4, Math.round((value / 100) * 86));
+      const hPx = isRestDay ? 4 : Math.max(4, Math.round((displayValue / 100) * 86));
       return `
-        <div class="flow-bar-col" title="${d}: ${value}% habit completion">
-          <div class="flow-bar-pill ${isToday ? 'today' : ''}" style="height:${hPx}px;"></div>
+        <div class="flow-bar-col" title="${d}: ${isRestDay ? 'Rest day' : displayValue + '% habit completion'}">
+          <div class="flow-bar-pill ${isToday ? 'today' : ''} ${isRestDay ? 'rest-day' : ''}" style="height:${hPx}px;"></div>
           <span class="flow-bar-lbl">${d}</span>
         </div>
       `;
@@ -4371,9 +4512,11 @@
       cellDate.setDate(gridStart.getDate() + idx);
       const dayNum = cellDate.getDate();
       const dateKey = getHabitDateKey(cellDate);
-      const fillPct = getHabitCompletionForDate(dateKey);
+      const savedCompletion = getHabitCompletionForDate(dateKey);
+      const isRestDay = savedCompletion === null;
+      const fillPct = isRestDay ? 0 : savedCompletion;
       return `
-        <div class="heat-cell ${isToday ? 'today-cell' : ''}" onclick="selectHeatmapCell(${idx}, ${dayNum}, ${fillPct})">
+        <div class="heat-cell ${isToday ? 'today-cell' : ''} ${isRestDay ? 'rest-day' : ''}" title="${isRestDay ? 'Rest day' : fillPct + '% habit completion'}" onclick="selectHeatmapCell(${idx}, ${dayNum}, ${isRestDay ? 'null' : fillPct})">
           <div class="heat-fill" style="height:${fillPct}%;"></div>
         </div>
       `;
@@ -4401,7 +4544,9 @@
 
   function selectHeatmapCell(idx, dayNum, fillPct) {
     selectedHeatmapIdx = idx;
-    const status = idx < 18 ? `Past · ${fillPct}%` : idx > 18 ? 'Future · No data' : `Today · ${fillPct}%`;
+    const status = fillPct === null
+      ? 'Rest day · No habits scheduled'
+      : idx < 18 ? `Past · ${fillPct}%` : idx > 18 ? 'Future · No data' : `Today · ${fillPct}%`;
     const selectedDate = new Date();
     selectedDate.setHours(12, 0, 0, 0);
     selectedDate.setDate(selectedDate.getDate() + (idx - 18));
