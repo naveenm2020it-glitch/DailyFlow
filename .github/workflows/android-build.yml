@@ -26,6 +26,24 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Check embedded JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path('app/src/main/assets/www/index.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script\\b[^>]*>([\\s\\S]*?)</script>', html, re.I)
+          if not scripts:
+              raise SystemExit('No inline scripts found')
+          for i, script in enumerate(scripts, 1):
+              Path(f'/tmp/dailyflow-script-{i}.js').write_text(script, encoding='utf-8')
+          print(f'Extracted {len(scripts)} inline script block(s)')
+          PY
+          for file in /tmp/dailyflow-script-*.js; do
+            echo "Checking $file"
+            node --check "$file"
+          done
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -49,7 +67,7 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build APK
-        run: gradle --no-daemon --stacktrace assembleDebug
+        run: gradle --no-daemon --stacktrace clean assembleDebug
 
       - name: Verify APK exists
         run: |
