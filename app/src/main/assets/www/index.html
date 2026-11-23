@@ -2847,10 +2847,28 @@
     Focus: { fg: '#AF52DE', bg: 'rgba(175, 82, 222, 0.14)' }
   };
 
+  // Use the device's local calendar date for daily habit progress.
+  function getLocalHabitDateKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  // Start a fresh daily count when the local date changes. Habit definitions
+  // and streak totals are preserved; only today's completion counters reset.
+  function ensureCurrentHabitDate() {
+    const todayKey = getLocalHabitDateKey();
+    if (state.habitProgressDate === todayKey) return false;
+    state.habits.forEach(h => { h.current = 0; });
+    state.habitProgressDate = todayKey;
+    saveState();
+    return true;
+  }
+
   function getDefaultState() {
     const now = Date.now();
     return {
       theme: 'light',
+      habitProgressDate: getLocalHabitDateKey(),
       selectedDayIndex: (new Date().getDay() + 6) % 7, // Current local weekday (0=Mon .. 6=Sun)
       spotlightIdx: 0,
       taskFilter: 'all',
@@ -2905,6 +2923,20 @@
     }
     return getDefaultState();
   })();
+
+  // Migrate older saved data and prevent a previous day's count appearing as today.
+  if (!state.habitProgressDate) {
+    state.habits.forEach(h => { h.current = 0; });
+    state.habitProgressDate = getLocalHabitDateKey();
+    SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
+  } else {
+    const todayHabitDate = getLocalHabitDateKey();
+    if (state.habitProgressDate !== todayHabitDate) {
+      state.habits.forEach(h => { h.current = 0; });
+      state.habitProgressDate = todayHabitDate;
+      SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
+    }
+  }
 
   function saveState() {
     SafeStorage.set('daily_flow_state_v273', JSON.stringify(state));
@@ -3099,6 +3131,7 @@
 
   // Metrics Calculation
   function getMetrics() {
+    ensureCurrentHabitDate();
     const totalTasks = state.tasks.length;
     const doneTasks = state.tasks.filter(t => t.done).length;
     const taskPct = totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
@@ -3890,6 +3923,7 @@
   }
 
   function stepHabit(id, delta) {
+    ensureCurrentHabitDate();
     const h = state.habits.find(x => x.id === id);
     if (!h) return;
     h.current = Math.max(0, Math.min(h.target, h.current + delta));
