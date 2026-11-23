@@ -2373,7 +2373,6 @@
               <circle cx="56" cy="56" r="36" fill="none" stroke="var(--ring-track)" stroke-width="7"/>
               <circle id="ringHabits" cx="56" cy="56" r="36" fill="none" stroke="#34C759" stroke-width="7" stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="226"/>
               <circle cx="56" cy="56" r="26" fill="none" stroke="var(--ring-track)" stroke-width="7"/>
-              <circle id="ringNotes" cx="56" cy="56" r="26" fill="none" stroke="#FF9F0A" stroke-width="7" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="163"/>
             </svg>
             <div class="pulse-center-text">
               <div class="pulse-pct" id="pulsePct">0%</div>
@@ -2388,10 +2387,6 @@
             <div class="pulse-row">
               <span class="pulse-dot-lbl"><span class="dot-ind" style="background:#34C759"></span>Habits</span>
               <strong id="pulseHabitsTxt">0%</strong>
-            </div>
-            <div class="pulse-row">
-              <span class="pulse-dot-lbl"><span class="dot-ind" style="background:#FF9F0A"></span>Notes</span>
-              <strong id="pulseNotesTxt">0</strong>
             </div>
           </div>
         </div>
@@ -2559,12 +2554,10 @@
             <circle cx="52" cy="52" r="40" fill="none" stroke="var(--ring-track)" stroke-width="12"/>
             <circle id="donutTasks" cx="52" cy="52" r="40" fill="none" stroke="#007AFF" stroke-width="12" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
             <circle id="donutHabits" cx="52" cy="52" r="40" fill="none" stroke="#34C759" stroke-width="12" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
-            <circle id="donutNotes" cx="52" cy="52" r="40" fill="none" stroke="#FF9F0A" stroke-width="12" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
           </svg>
           <div class="donut-legend">
             <div class="donut-row"><span><span style="color:#007AFF">●</span> Tasks</span><span id="balTasksPct">0%</span></div>
             <div class="donut-row"><span><span style="color:#34C759">●</span> Habits</span><span id="balHabitsPct">0%</span></div>
-            <div class="donut-row"><span><span style="color:#FF9F0A">●</span> Notes</span><span id="balNotesPct">0%</span></div>
           </div>
         </div>
       </div>
@@ -3184,12 +3177,11 @@
     });
     const habitPct = state.habits.length === 0 ? 0 : Math.round((habitRatioSum / state.habits.length) * 100);
 
-    const notePct = Math.min(100, state.notes.length * 25);
-    const flowPct = Math.round((taskPct * 0.4) + (habitPct * 0.4) + (notePct * 0.2));
+    const flowPct = Math.round((taskPct + habitPct) / 2);
     const bestStreak = state.habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
     const activeReminders = state.tasks.filter(t => !t.done && t.reminderAt).length;
 
-    return { totalTasks, doneTasks, taskPct, habitPct, notePct, flowPct, bestStreak, activeReminders };
+    return { totalTasks, doneTasks, taskPct, habitPct, flowPct, bestStreak, activeReminders };
   }
 
   // Render 7-Day Ribbon
@@ -3276,11 +3268,9 @@
     document.getElementById('pulsePct').textContent = `${m.flowPct}%`;
     document.getElementById('pulseTasksTxt').textContent = `${m.doneTasks}/${m.totalTasks}`;
     document.getElementById('pulseHabitsTxt').textContent = `${m.habitPct}%`;
-    document.getElementById('pulseNotesTxt').textContent = `${state.notes.length}`;
 
     document.getElementById('ringTasks').style.strokeDashoffset = 289 - (289 * m.taskPct) / 100;
     document.getElementById('ringHabits').style.strokeDashoffset = 226 - (226 * m.habitPct) / 100;
-    document.getElementById('ringNotes').style.strokeDashoffset = 163 - (163 * m.notePct) / 100;
 
     const topNote = state.notes.find(n => n.pinned) || state.notes[0];
     document.getElementById('quickJotPreview').textContent = topNote
@@ -4387,15 +4377,13 @@
     }).join('');
 
     // Daily Balance Donut
-    const totalShare = Math.max(1, m.taskPct + m.habitPct + m.notePct);
+    const totalShare = Math.max(1, m.taskPct + m.habitPct);
     const tFrac = m.taskPct / totalShare;
     const hFrac = m.habitPct / totalShare;
-    const nFrac = m.notePct / totalShare;
     const C = 251.3;
 
     const dTasks = document.getElementById('donutTasks');
     const dHabits = document.getElementById('donutHabits');
-    const dNotes = document.getElementById('donutNotes');
 
     dTasks.style.strokeDasharray = `${(tFrac * C).toFixed(1)} ${C}`;
     dTasks.style.strokeDashoffset = '0';
@@ -4403,12 +4391,8 @@
     dHabits.style.strokeDasharray = `${(hFrac * C).toFixed(1)} ${C}`;
     dHabits.style.strokeDashoffset = `${(-tFrac * C).toFixed(1)}`;
 
-    dNotes.style.strokeDasharray = `${(nFrac * C).toFixed(1)} ${C}`;
-    dNotes.style.strokeDashoffset = `${(-(tFrac + hFrac) * C).toFixed(1)}`;
-
     document.getElementById('balTasksPct').textContent = `${m.taskPct}%`;
     document.getElementById('balHabitsPct').textContent = `${m.habitPct}%`;
-    document.getElementById('balNotesPct').textContent = `${m.notePct}%`;
   }
 
   function selectHeatmapCell(idx, dayNum, fillPct) {
