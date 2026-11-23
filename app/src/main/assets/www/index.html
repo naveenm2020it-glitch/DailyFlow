@@ -2328,7 +2328,7 @@
   <header class="app-header">
     <div class="date-pill">
       <span class="date-pill-dot"></span>
-      <span id="headerDatePill">Fri 20</span>
+      <span id="headerDatePill"></span>
     </div>
     <div class="header-actions">
       <button class="icon-pill-btn" onclick="openRemindersSheet()" aria-label="Scheduled Reminders">
@@ -2349,7 +2349,7 @@
     <section class="tab-view active" id="view-today">
       <div class="greeting-block">
         <h1 class="greeting-title" id="greetingHeading">Good Morning</h1>
-        <p class="greeting-sub" id="greetingSubtitle">Friday, November 20 · 0 of 0 tasks complete</p>
+        <p class="greeting-sub" id="greetingSubtitle"></p>
       </div>
 
       <!-- 7-Day Pill Ribbon -->
@@ -2925,7 +2925,7 @@
   let resetConfirmArmed = false;
   let resetTimer = null;
   let activePushTaskId = null;
-  let selectedHeatmapIdx = 18; // Today index in 28-day grid (0..27)
+  let selectedHeatmapIdx = 0; // Set to the current day when the progress grid renders
 
   // Clock Popup State
   let clockContext = 'newTask'; // 'newTask' | taskId
@@ -4249,8 +4249,9 @@
     document.getElementById('heatmapTodayBadge').textContent = `${m.habitPct}% Today`;
 
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const todayWeekday = (new Date().getDay() + 6) % 7;
     document.getElementById('progressFlowBars').innerHTML = days.map((d, idx) => {
-      const isToday = idx === 4; // Friday
+      const isToday = idx === todayWeekday;
       const hPx = isToday ? Math.max(12, Math.round((m.flowPct / 100) * 86)) : 12;
       return `
         <div class="flow-bar-col">
@@ -4260,16 +4261,20 @@
       `;
     }).join('');
 
-    // 28-Day Habit Consistency Grid:
-    // Indices 0..17 = Past dates (plain blank)
-    // Index 18 = Today (0% blank, 1..99% half-green fill, 100% full green)
-    // Indices 19..27 = Future dates (plain blank)
+    // Rolling 28-day window: 18 days before today, today, and 9 days ahead.
     const todayIdx = 18;
+    selectedHeatmapIdx = todayIdx;
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    const gridStart = new Date(today);
+    gridStart.setDate(today.getDate() - todayIdx);
     const grid = document.getElementById('heatmapGrid');
     grid.innerHTML = Array.from({ length: 28 }, (_, idx) => {
       const isToday = idx === todayIdx;
+      const cellDate = new Date(gridStart);
+      cellDate.setDate(gridStart.getDate() + idx);
+      const dayNum = cellDate.getDate();
       const fillPct = isToday ? m.habitPct : 0;
-      const dayNum = idx + 2; // Nov 2 .. Nov 29
       return `
         <div class="heat-cell ${isToday ? 'today-cell' : ''}" onclick="selectHeatmapCell(${idx}, ${dayNum}, ${fillPct})">
           <div class="heat-fill" style="height:${fillPct}%;"></div>
@@ -4305,7 +4310,11 @@
   function selectHeatmapCell(idx, dayNum, fillPct) {
     selectedHeatmapIdx = idx;
     const status = idx < 18 ? 'Past · Blank' : idx > 18 ? 'Future · Blank' : `Today · ${fillPct}%`;
-    document.getElementById('heatmapSelectedDayLabel').textContent = `Nov ${dayNum} · ${status}`;
+    const selectedDate = new Date();
+    selectedDate.setHours(12, 0, 0, 0);
+    selectedDate.setDate(selectedDate.getDate() + (idx - 18));
+    const monthLabel = selectedDate.toLocaleDateString(undefined, { month: 'short' });
+    document.getElementById('heatmapSelectedDayLabel').textContent = `${monthLabel} ${dayNum} · ${status}`;
     hapticFeedback();
   }
 
