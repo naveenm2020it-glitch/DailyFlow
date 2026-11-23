@@ -119,62 +119,7 @@
     }
   }
 
-  .quick-jot-form { display:flex; gap:7px; }
-  .quick-jot-input { min-width:0; flex:1; }
-  .notes-new-button {
-    position:fixed; left:18px; right:18px;
-    bottom:calc(var(--safe-bottom) + 84px); z-index:220;
-    display:none; align-items:center; justify-content:center; gap:9px;
-    min-height:54px; border:0; border-radius:20px;
-    color:#fff; background:var(--accent,#087cff);
-    box-shadow:0 10px 28px rgba(0,105,255,.25);
-    font-size:15px; font-weight:750;
-  }
-  .notes-new-button.visible { display:flex; }
-  .notes-new-plus { font-size:22px; line-height:1; }
-  .note-create-overlay {
-    position:fixed; inset:0; z-index:500; display:none;
-    align-items:flex-end; justify-content:center;
-    padding-top:24px; background:rgba(12,18,30,.38);
-    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  }
-  .note-create-overlay.open { display:flex; }
-  .note-create-panel {
-    width:100%; max-height:88dvh; overflow-y:auto;
-    padding:12px 20px calc(var(--safe-bottom) + 22px);
-    border-radius:30px 30px 0 0;
-    background:var(--glass-bg-elevated);
-    border:1px solid var(--glass-border);
-    box-shadow:0 -14px 45px rgba(0,0,0,.18);
-    display:flex; flex-direction:column; gap:16px;
-  }
-  .note-create-grabber { width:44px; height:5px; border-radius:8px; background:var(--text-tertiary); opacity:.28; align-self:center; }
-  .note-create-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-  .note-create-heading h2 { margin:0; color:var(--text-primary); font-size:23px; letter-spacing:-.5px; }
-  .note-create-heading p { margin:4px 0 0; color:var(--text-secondary); font-size:13px; }
-  .note-create-close { width:40px; height:40px; border:0; border-radius:50%; background:var(--glass-inset); color:var(--text-primary); font-size:27px; }
-  .note-type-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
-  .note-type-option {
-    min-width:0; min-height:104px; padding:12px 5px;
-    display:flex; flex-direction:column; justify-content:center; align-items:center; gap:9px;
-    border:1.5px solid var(--glass-border); border-radius:18px;
-    background:var(--glass-bg); color:var(--text-primary);
-  }
-  .note-type-option span { font-size:26px; }
-  .note-type-option strong { font-size:13px; }
-  .note-type-option.selected { border-color:var(--accent,#087cff); background:rgba(0,122,255,.10); color:var(--accent,#087cff); box-shadow:inset 0 0 0 1px var(--accent,#087cff); }
-  .note-create-textarea {
-    width:100%; min-height:116px; resize:vertical; box-sizing:border-box;
-    padding:15px; border:1px solid var(--glass-border); border-radius:18px;
-    outline:none; background:var(--glass-bg); color:var(--text-primary);
-    font:inherit; font-size:16px; line-height:1.45;
-  }
-  .note-create-textarea:focus { border-color:var(--accent,#087cff); }
-  .note-create-actions { display:flex; gap:10px; }
-  .note-create-actions button { min-height:50px; border:0; border-radius:16px; font-size:15px; font-weight:700; }
-  .note-create-cancel { flex:1; background:var(--glass-inset); color:var(--text-primary); }
-  .note-create-save { flex:2; background:var(--accent,#087cff); color:white; }
-  body.note-composer-open .bottom-dock { pointer-events:none; }
+  /* Notes use the same compact inline composer style as the original app. */
 
   /* Ambient Mesh Aura */
   .ambient-bg {
@@ -2460,7 +2405,7 @@
             </div>
             <div class="quick-jot-preview" id="quickJotPreview">Capture a quick thought or reminder for today.</div>
             <form class="quick-jot-form" onsubmit="submitQuickJot(event)">
-              <input class="quick-jot-input" id="quickJotInput" type="text" placeholder="Capture a quick note..." />
+              <input class="quick-jot-input" id="quickJotInput" type="text" placeholder="Jot a thought..." />
               <button class="quick-jot-send" type="submit">↵</button>
             </form>
           </div>
@@ -2639,29 +2584,10 @@
   </div>
 
   <!-- Notes Floating Composer Bar -->
-  <button class="notes-new-button" id="notesNewButton" onclick="openNoteComposer()" type="button">
-    <span class="notes-new-plus">＋</span><span>New Note</span>
-  </button>
-
-  <div class="note-create-overlay" id="noteCreateOverlay" onclick="if(event.target===this)closeNoteComposer()">
-    <form class="note-create-panel" onsubmit="submitNoteComposer(event)" role="dialog" aria-modal="true" aria-labelledby="noteCreateTitle">
-      <div class="note-create-grabber"></div>
-      <div class="note-create-heading">
-        <div><h2 id="noteCreateTitle">Create a note</h2><p>What would you like to capture?</p></div>
-        <button type="button" class="note-create-close" onclick="closeNoteComposer()" aria-label="Close">×</button>
-      </div>
-      <div class="note-type-options" role="group" aria-label="Note type">
-        <button type="button" class="note-type-option selected" data-note-type="Thought" onclick="selectNoteComposerType('Thought')"><span>💡</span><strong>Thought</strong></button>
-        <button type="button" class="note-type-option" data-note-type="Idea" onclick="selectNoteComposerType('Idea')"><span>✨</span><strong>Idea</strong></button>
-        <button type="button" class="note-type-option" data-note-type="Reminder" onclick="selectNoteComposerType('Reminder')"><span>🔔</span><strong>Reminder</strong></button>
-      </div>
-      <textarea class="note-create-textarea" id="noteCreateText" rows="4" placeholder="What's on your mind?"></textarea>
-      <div class="note-create-actions">
-        <button type="button" class="note-create-cancel" onclick="closeNoteComposer()">Cancel</button>
-        <button type="submit" class="note-create-save">Save Note</button>
-      </div>
-    </form>
-  </div>
+  <form class="note-composer-bar" id="notesComposerBar" onsubmit="submitNoteFromTab(event)">
+    <input type="text" id="notesTabInput" placeholder="Write a quick note..." />
+    <button type="submit" class="note-send-btn">↑</button>
+  </form>
 
   <!-- Edit existing note -->
   <div class="note-edit-overlay" id="noteEditOverlay" onclick="if(event.target===this)closeNoteEditor()">
@@ -3123,7 +3049,7 @@
       b.classList.toggle('active', b.dataset.tab === tab);
     });
     document.getElementById('todayFabBar').classList.toggle('hidden', tab !== 'today');
-    document.getElementById('notesNewButton').classList.toggle('visible', tab === 'notes');
+    document.getElementById('notesComposerBar').classList.toggle('visible', tab === 'notes');
     renderAll();
   }
 
@@ -4192,52 +4118,23 @@
     renderNotes();
   }
 
-  let noteComposerType = 'Thought';
-
-  function openNoteComposer(prefill = '') {
-    noteComposerType = 'Thought';
-    document.querySelectorAll('.note-type-option').forEach(btn => {
-      btn.classList.toggle('selected', btn.dataset.noteType === noteComposerType);
-    });
-    const field = document.getElementById('noteCreateText');
-    field.value = prefill || '';
-    document.getElementById('noteCreateOverlay').classList.add('open');
-    document.body.classList.add('note-composer-open');
-    setTimeout(() => field.focus(), 180);
-  }
-
-  function closeNoteComposer() {
-    document.getElementById('noteCreateOverlay').classList.remove('open');
-    document.body.classList.remove('note-composer-open');
-    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-  }
-
-  function selectNoteComposerType(type) {
-    noteComposerType = type;
-    document.querySelectorAll('.note-type-option').forEach(btn => {
-      btn.classList.toggle('selected', btn.dataset.noteType === type);
-    });
-  }
-
   function submitQuickJot(e) {
     e.preventDefault();
     const inp = document.getElementById('quickJotInput');
     const text = (inp.value || '').trim();
-    openNoteComposer(text);
+    if (!text) return;
+    addNoteItem(text, 'Thought');
+    inp.value = '';
   }
 
-  function submitNoteComposer(e) {
+  function submitNoteFromTab(e) {
     e.preventDefault();
-    const field = document.getElementById('noteCreateText');
-    const text = (field.value || '').trim();
-    if (!text) {
-      field.focus();
-      showIslandMessage('Write something before saving');
-      return;
-    }
-    addNoteItem(text, noteComposerType);
-    closeNoteComposer();
-    document.getElementById('quickJotInput').value = '';
+    const inp = document.getElementById('notesTabInput');
+    const text = (inp.value || '').trim();
+    if (!text) return;
+    const tag = state.noteTag === 'All' ? 'Thought' : state.noteTag;
+    addNoteItem(text, tag);
+    inp.value = '';
   }
 
   function addNoteItem(text, tag) {
