@@ -113,9 +113,38 @@
       display: none !important;
     }
     .app-header {
-      padding-top: calc(var(--safe-top) + 10px) !important;
+      /* Android WebView can report env(safe-area-inset-top) as 0 on first paint.
+         Keep a safe minimum, then use the exact native inset when it arrives. */
+      padding-top: calc(max(var(--safe-top), 24px) + 10px) !important;
     }
   }
+
+  .quick-jot-form { flex-wrap: wrap; gap: 5px; }
+  .quick-jot-type, .notes-composer-type {
+    border: 1px solid var(--glass-hairline);
+    border-radius: 999px;
+    background: var(--glass-inset);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 650;
+    padding: 7px 10px;
+    outline: none;
+    max-width: 100%;
+  }
+  .quick-jot-type { flex: 0 0 auto; }
+  .notes-composer-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+  }
+  .notes-composer-type { width: 100%; min-height: 34px; }
+  .notes-composer-entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .notes-composer-entry input { flex: 1; min-width: 0; }
 
   /* Ambient Mesh Aura */
   .ambient-bg {
@@ -2270,6 +2299,9 @@
     border-color: var(--accent-blue);
     color: var(--accent-blue);
   }
+@media (max-width: 520px) {
+    .app-header { padding-top: calc(max(var(--safe-top), 24px) + 10px) !important; }
+  }
 </style>
 </head>
 <body>
@@ -2398,7 +2430,12 @@
             </div>
             <div class="quick-jot-preview" id="quickJotPreview">Capture a quick thought or reminder for today.</div>
             <form class="quick-jot-form" onsubmit="submitQuickJot(event)">
-              <input class="quick-jot-input" id="quickJotInput" type="text" placeholder="Jot a thought..." />
+              <select class="quick-jot-type" id="quickJotType" aria-label="Choose note type">
+                <option value="Thought">Thought</option>
+                <option value="Idea">Idea</option>
+                <option value="Reminder">Reminder</option>
+              </select>
+              <input class="quick-jot-input" id="quickJotInput" type="text" placeholder="Write a thought, idea or reminder..." />
               <button class="quick-jot-send" type="submit">↵</button>
             </form>
           </div>
@@ -2578,8 +2615,16 @@
 
   <!-- Notes Floating Composer Bar -->
   <form class="note-composer-bar" id="notesComposerBar" onsubmit="submitNoteFromTab(event)">
-    <input type="text" id="notesTabInput" placeholder="Write a quick note..." />
-    <button type="submit" class="note-send-btn">↑</button>
+    <select class="notes-composer-type" id="notesComposerType" aria-label="Choose note type" required>
+      <option value="" selected disabled>Choose type</option>
+      <option value="Thought">💡 Thought</option>
+      <option value="Idea">✨ Idea</option>
+      <option value="Reminder">🔔 Reminder</option>
+    </select>
+    <div class="notes-composer-entry">
+      <input type="text" id="notesTabInput" placeholder="Write your thought, idea or reminder..." />
+      <button type="submit" class="note-send-btn" aria-label="Save note">↑</button>
+    </div>
   </form>
 
   <!-- Edit existing note -->
@@ -2738,7 +2783,7 @@
     <div class="bottom-sheet">
       <div class="sheet-grabber"></div>
       <div class="sheet-header">
-        <span class="sheet-title">New Daily Ritual</span>
+        <span class="sheet-title" id="habitSheetTitle">New Daily Ritual</span>
         <button class="sheet-close-btn" onclick="closeSheet('newHabitSheet')">×</button>
       </div>
 
@@ -2771,7 +2816,7 @@
         <div class="swatch-row" id="habitColorSwatches"></div>
       </div>
 
-      <button class="sheet-submit-btn" onclick="createNewHabit()">Create Ritual</button>
+      <button class="sheet-submit-btn" id="habitSaveButton" onclick="createNewHabit()">Create Ritual</button>
     </div>
   </div>
 
@@ -2908,6 +2953,7 @@
   let newTaskCat = 'Work';
   let newTaskPrio = 'None';
   let newHabitTarget = 8;
+  let editingHabitId = null;
   let newHabitUnit = 'times';
   let newHabitIcon = 'drop';
   let newHabitColor = '#007AFF';
@@ -3042,6 +3088,10 @@
     });
     document.getElementById('todayFabBar').classList.toggle('hidden', tab !== 'today');
     document.getElementById('notesComposerBar').classList.toggle('visible', tab === 'notes');
+    if (tab === 'notes') {
+      const typePicker = document.getElementById('notesComposerType');
+      if (typePicker && !document.getElementById('notesTabInput').value) typePicker.value = '';
+    }
     renderAll();
   }
 
@@ -3946,6 +3996,7 @@
               </div>
               <div class="habit-sub">${h.current} of ${h.target} ${h.unit} · ${pct}%</div>
             </div>
+            <button class="row-mini-btn" onclick="editHabit('${h.id}')" aria-label="Edit Habit" title="Edit habit">✎</button>
             <button class="row-mini-btn" onclick="promptDeleteHabit('${h.id}')" aria-label="Delete Habit">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
             </button>
@@ -3967,6 +4018,9 @@
   }
 
   function openNewHabitSheet() {
+    editingHabitId = null;
+    document.getElementById('habitSheetTitle').textContent = 'New Daily Ritual';
+    document.getElementById('habitSaveButton').textContent = 'Create Ritual';
     newHabitTarget = 8;
     newHabitUnit = 'times';
     newHabitIcon = 'drop';
@@ -4002,16 +4056,56 @@
     `).join('');
   }
 
+  function editHabit(id) {
+    const habit = state.habits.find(x => x.id === id);
+    if (!habit) return;
+    editingHabitId = id;
+    newHabitTarget = Math.max(1, Math.min(99, Number(habit.target) || 1));
+    newHabitUnit = habit.unit || 'times';
+    newHabitIcon = habit.icon || 'drop';
+    newHabitColor = habit.color || '#007AFF';
+    document.getElementById('newHabitNameInput').value = habit.name || '';
+    document.getElementById('newHabitTargetVal').textContent = String(newHabitTarget);
+    document.getElementById('habitSheetTitle').textContent = 'Edit Daily Ritual';
+    document.getElementById('habitSaveButton').textContent = 'Save Changes';
+    selectHabitUnit(newHabitUnit);
+    renderHabitSwatches();
+    document.getElementById('newHabitSheet').classList.add('open');
+    hapticFeedback();
+  }
+
   function createNewHabit() {
     const raw = (document.getElementById('newHabitNameInput').value || '').trim();
-    const name = raw || 'Daily Focus Ritual';
+    if (!raw) {
+      showIslandMessage('Enter a habit name');
+      document.getElementById('newHabitNameInput').focus();
+      return;
+    }
+    const name = raw;
+    if (editingHabitId) {
+      const habit = state.habits.find(x => x.id === editingHabitId);
+      if (!habit) return;
+      habit.name = name;
+      habit.target = newHabitTarget;
+      habit.unit = newHabitUnit;
+      habit.icon = newHabitIcon;
+      habit.color = newHabitColor;
+      // Keep habit.current and habit.streak untouched so edits never erase progress.
+      editingHabitId = null;
+      saveState();
+      closeSheet('newHabitSheet');
+      renderAll();
+      hapticFeedback();
+      showIslandMessage('Habit Updated');
+      return;
+    }
     state.habits.push({
       id: 'h_' + Date.now(),
       name,
       current: 0,
       target: newHabitTarget,
       unit: newHabitUnit,
-      streak: 1,
+      streak: 0,
       icon: newHabitIcon,
       color: newHabitColor
     });
@@ -4071,7 +4165,8 @@
     const inp = document.getElementById('quickJotInput');
     const text = (inp.value || '').trim();
     if (!text) return;
-    addNoteItem(text, 'Thought');
+    const type = document.getElementById('quickJotType').value || 'Thought';
+    addNoteItem(text, type);
     inp.value = '';
   }
 
@@ -4080,9 +4175,16 @@
     const inp = document.getElementById('notesTabInput');
     const text = (inp.value || '').trim();
     if (!text) return;
-    const tag = state.noteTag === 'All' ? 'Thought' : state.noteTag;
+    const typePicker = document.getElementById('notesComposerType');
+    const tag = typePicker.value;
+    if (!tag) {
+      typePicker.focus();
+      showIslandMessage('Choose Thought, Idea or Reminder');
+      return;
+    }
     addNoteItem(text, tag);
     inp.value = '';
+    typePicker.value = '';
   }
 
   function addNoteItem(text, tag) {
