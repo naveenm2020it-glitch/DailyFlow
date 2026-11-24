@@ -1800,11 +1800,30 @@
     color: var(--text-tertiary);
   }
 
-  /* 28-Day Plain/Blank -> Half/Full Green Heatmap */
+  /* Calendar-month habit heatmap, Monday-first and aligned to real dates. */
+  .heatmap-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+    margin-bottom: 7px;
+  }
+
+  .heatmap-weekday {
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 10px;
+    font-weight: 700;
+  }
+
   .heatmap-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 7px;
+  }
+
+  .heatmap-empty {
+    aspect-ratio: 1;
+    visibility: hidden;
   }
 
   .heat-cell {
@@ -1819,6 +1838,22 @@
 
   .heat-cell.today-cell {
     border: 1.5px solid var(--accent-green);
+  }
+
+  .heat-day-number {
+    position: absolute;
+    z-index: 2;
+    top: 4px;
+    left: 5px;
+    color: var(--text-secondary);
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 700;
+    pointer-events: none;
+  }
+
+  .heat-cell.today-cell .heat-day-number {
+    color: var(--accent-green);
   }
 
   .heat-fill {
@@ -2790,12 +2825,13 @@
         <div class="flow-bars-grid" id="progressFlowBars"></div>
       </div>
 
-      <!-- 28-Day Habit Consistency (Blank Past/Future; Blank/Half/Full Green Today) -->
+      <!-- Monthly Habit Consistency (real calendar dates; saved daily completion) -->
       <div class="glass-card analytics-card">
         <div class="analytics-head">
-          <span class="analytics-title">28-Day Habit Consistency</span>
+          <span class="analytics-title">Monthly Habit Consistency</span>
           <span class="analytics-badge green" id="heatmapTodayBadge">0% Today</span>
         </div>
+        <div class="heatmap-weekdays" aria-hidden="true"><span class="heatmap-weekday">Mon</span><span class="heatmap-weekday">Tue</span><span class="heatmap-weekday">Wed</span><span class="heatmap-weekday">Thu</span><span class="heatmap-weekday">Fri</span><span class="heatmap-weekday">Sat</span><span class="heatmap-weekday">Sun</span></div>
         <div class="heatmap-grid" id="heatmapGrid"></div>
         <div class="heatmap-legend">
           <span id="heatmapSelectedDayLabel">Today · Live</span>
@@ -4821,29 +4857,40 @@
       `;
     }).join('');
 
-    // Rolling 28-day heatmap: display saved daily habit completion for past dates.
-    const todayIdx = 18;
-    selectedHeatmapIdx = todayIdx;
+    // Current calendar month: one real cell per date, aligned Monday to Sunday.
     const today = new Date();
     today.setHours(12, 0, 0, 0);
-    const gridStart = new Date(today);
-    gridStart.setDate(today.getDate() - todayIdx);
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1, 12);
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const mondayFirstOffset = (monthStart.getDay() + 6) % 7;
+    selectedHeatmapIdx = today.getDate() - 1;
+    const monthName = today.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    document.querySelector('#view-progress .analytics-card .analytics-title')?.textContent;
+    const heatmapTitle = document.querySelector('#heatmapGrid')?.previousElementSibling;
+    if (heatmapTitle) heatmapTitle.textContent = `${monthName} · Habit Consistency`;
     const grid = document.getElementById('heatmapGrid');
-    grid.innerHTML = Array.from({ length: 28 }, (_, idx) => {
-      const isToday = idx === todayIdx;
-      const cellDate = new Date(gridStart);
-      cellDate.setDate(gridStart.getDate() + idx);
-      const dayNum = cellDate.getDate();
+    const emptyCells = Array.from({ length: mondayFirstOffset }, () => '<div class="heatmap-empty" aria-hidden="true"></div>').join('');
+    const dateCells = Array.from({ length: daysInMonth }, (_, idx) => {
+      const cellDate = new Date(today.getFullYear(), today.getMonth(), idx + 1, 12);
+      const isToday = getHabitDateKey(cellDate) === getHabitDateKey(today);
       const dateKey = getHabitDateKey(cellDate);
       const savedCompletion = getHabitCompletionForDate(dateKey);
       const isRestDay = savedCompletion === null;
-      const fillPct = isRestDay ? 0 : savedCompletion;
+      const isFuture = cellDate > today;
+      const fillPct = isRestDay || isFuture ? 0 : savedCompletion;
+      const title = isFuture ? 'Future · No data' : isRestDay ? 'Rest day · No habits scheduled' : `${fillPct}% habit completion`;
       return `
-        <div class="heat-cell ${isToday ? 'today-cell' : ''} ${isRestDay ? 'rest-day' : ''}" title="${isRestDay ? 'Rest day' : fillPct + '% habit completion'}" onclick="selectHeatmapCell(${idx}, ${dayNum}, ${isRestDay ? 'null' : fillPct})">
+        <div class="heat-cell ${isToday ? 'today-cell' : ''} ${isRestDay ? 'rest-day' : ''}" title="${dateKey}: ${title}" onclick="selectHeatmapCell('${dateKey}', ${isRestDay || isFuture ? 'null' : fillPct})">
+          <span class="heat-day-number">${idx + 1}</span>
           <div class="heat-fill" style="height:${fillPct}%;"></div>
         </div>
       `;
     }).join('');
+    grid.innerHTML = emptyCells + dateCells;
+    const todayCompletion = getHabitCompletionForDate(getHabitDateKey(today));
+    document.getElementById('heatmapSelectedDayLabel').textContent = todayCompletion === null
+      ? `Today · ${today.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · Rest day`
+      : `Today · ${today.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · ${todayCompletion}%`;
 
     // Daily Balance Donut: Tasks + Habits only; Notes are deliberately excluded.
     const trackedCompletionTotal = m.taskPct + m.habitPct;
@@ -4865,16 +4912,22 @@
     document.getElementById('balHabitsPct').textContent = `${m.habitPct}%`;
   }
 
-  function selectHeatmapCell(idx, dayNum, fillPct) {
-    selectedHeatmapIdx = idx;
-    const status = fillPct === null
-      ? 'Rest day · No habits scheduled'
-      : idx < 18 ? `Past · ${fillPct}%` : idx > 18 ? 'Future · No data' : `Today · ${fillPct}%`;
-    const selectedDate = new Date();
-    selectedDate.setHours(12, 0, 0, 0);
-    selectedDate.setDate(selectedDate.getDate() + (idx - 18));
-    const monthLabel = selectedDate.toLocaleDateString(undefined, { month: 'short' });
-    document.getElementById('heatmapSelectedDayLabel').textContent = `${monthLabel} ${dayNum} · ${status}`;
+  function selectHeatmapCell(dateKey, fillPct) {
+    const selectedDate = new Date(`${dateKey}T12:00:00`);
+    if (Number.isNaN(selectedDate.getTime())) return;
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    const selectedDay = new Date(selectedDate);
+    selectedDay.setHours(12, 0, 0, 0);
+    const status = selectedDay.getTime() > today.getTime()
+      ? 'Future · No data'
+      : fillPct === null
+        ? 'Rest day · No habits scheduled'
+        : selectedDay.getTime() === today.getTime()
+          ? `Today · ${fillPct}%`
+          : `Past · ${fillPct}%`;
+    const dateLabel = selectedDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    document.getElementById('heatmapSelectedDayLabel').textContent = `${dateLabel} · ${status}`;
     hapticFeedback();
   }
 
