@@ -3908,6 +3908,10 @@
 
   function openTaskCalendar(purpose = 'task') {
     taskCalendarPurpose = purpose;
+    // The calendar is a separate step: hide the time picker so the two dialogs never overlap.
+    if (purpose === 'reminder') {
+      document.getElementById('clockPopupOverlay').classList.remove('open');
+    }
     const current = purpose === 'reminder' ? localDateKey(clockSelectedDate) : document.getElementById('newTaskDateInput').value;
     taskCalendarSelected = current ? parseLocalDateKey(current) : new Date();
     taskCalendarCursor = new Date(taskCalendarSelected.getFullYear(), taskCalendarSelected.getMonth(), 1, 12);
@@ -3955,6 +3959,9 @@
 
   function cancelTaskCalendar() {
     closeSheet('taskCalendarOverlay');
+    if (taskCalendarPurpose === 'reminder') {
+      document.getElementById('clockPopupOverlay').classList.add('open');
+    }
   }
 
   function confirmTaskCalendarDate() {
@@ -3969,6 +3976,9 @@
       document.getElementById('newTaskDateLabel').textContent = formatTaskDateLabel(taskCalendarSelected);
     }
     closeSheet('taskCalendarOverlay');
+    if (taskCalendarPurpose === 'reminder') {
+      document.getElementById('clockPopupOverlay').classList.add('open');
+    }
   }
 
   // New Task Sheet Logic
