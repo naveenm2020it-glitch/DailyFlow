@@ -3030,6 +3030,7 @@
       </div>
 
       <div class="clock-countdown-pill" id="clockCountdownPill">Today · in 15m</div>
+      <button type="button" class="sheet-date-trigger" style="width:100%;margin:0 0 12px;" onclick="openTaskCalendar(&quot;reminder&quot;)"><span class="date-trigger-value"><span class="date-trigger-icon">▦</span><span id="clockReminderDateLabel">Today</span></span><span style="color:var(--accent-blue);font-size:12px;font-weight:700;">Change date ›</span></button>
 
       <!-- Mode A: 3D Cylindrical Glass Drum Wheels -->
       <div class="wheel-stage" id="clockWheelStage">
@@ -3886,6 +3887,8 @@
   // ==================== iOS STYLE TASK DATE CALENDAR ====================
   let taskCalendarCursor = new Date();
   let taskCalendarSelected = new Date();
+  let taskCalendarPurpose = 'task';
+  let clockSelectedDate = new Date();
 
   function parseLocalDateKey(value) {
     const parts = String(value || '').split('-').map(Number);
@@ -3903,8 +3906,9 @@
     return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric' });
   }
 
-  function openTaskCalendar() {
-    const current = document.getElementById('newTaskDateInput').value;
+  function openTaskCalendar(purpose = 'task') {
+    taskCalendarPurpose = purpose;
+    const current = purpose === 'reminder' ? localDateKey(clockSelectedDate) : document.getElementById('newTaskDateInput').value;
     taskCalendarSelected = current ? parseLocalDateKey(current) : new Date();
     taskCalendarCursor = new Date(taskCalendarSelected.getFullYear(), taskCalendarSelected.getMonth(), 1, 12);
     renderTaskCalendar();
@@ -3954,9 +3958,16 @@
   }
 
   function confirmTaskCalendarDate() {
-    const input = document.getElementById('newTaskDateInput');
-    input.value = localDateKey(taskCalendarSelected);
-    document.getElementById('newTaskDateLabel').textContent = formatTaskDateLabel(taskCalendarSelected);
+    if (taskCalendarPurpose === 'reminder') {
+      clockSelectedDate = new Date(taskCalendarSelected.getFullYear(), taskCalendarSelected.getMonth(), taskCalendarSelected.getDate(), 12);
+      document.getElementById('clockReminderDateLabel').textContent = formatTaskDateLabel(clockSelectedDate);
+      clockPresetExactMs = null;
+      syncClockUI();
+    } else {
+      const input = document.getElementById('newTaskDateInput');
+      input.value = localDateKey(taskCalendarSelected);
+      document.getElementById('newTaskDateLabel').textContent = formatTaskDateLabel(taskCalendarSelected);
+    }
     closeSheet('taskCalendarOverlay');
   }
 
@@ -4098,7 +4109,10 @@
 
   function openClockForNewTask() {
     clockContext = 'newTask';
+    const taskDate = document.getElementById('newTaskDateInput').value;
     const base = pendingNewTaskReminderAt ? new Date(pendingNewTaskReminderAt) : new Date(Date.now() + 15 * 60 * 1000);
+    clockSelectedDate = pendingNewTaskReminderAt ? new Date(base.getFullYear(), base.getMonth(), base.getDate(), 12) : parseLocalDateKey(taskDate || localDateKey(new Date()));
+    document.getElementById('clockReminderDateLabel').textContent = formatTaskDateLabel(clockSelectedDate);
     loadDateIntoClock(base);
     document.getElementById('clockPopupOverlay').classList.add('open');
   }
@@ -4107,6 +4121,8 @@
     clockContext = taskId;
     const t = state.tasks.find(x => x.id === taskId);
     const base = (t && t.reminderAt) ? new Date(t.reminderAt) : new Date(Date.now() + 15 * 60 * 1000);
+    clockSelectedDate = (t && t.reminderAt) ? new Date(base.getFullYear(), base.getMonth(), base.getDate(), 12) : parseLocalDateKey((t && t.taskDate) || localDateKey(new Date()));
+    document.getElementById('clockReminderDateLabel').textContent = formatTaskDateLabel(clockSelectedDate);
     loadDateIntoClock(base);
     document.getElementById('clockPopupOverlay').classList.add('open');
   }
@@ -4151,14 +4167,9 @@
 
   function computeTargetTimestamp() {
     if (clockPresetExactMs) return clockPresetExactMs;
-    const now = new Date();
     let h24 = clockHour12 % 12;
     if (clockAmPm === 'PM') h24 += 12;
-    const candidate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h24, clockMinute, 0, 0);
-    if (candidate.getTime() <= now.getTime()) {
-      candidate.setDate(candidate.getDate() + 1);
-    }
-    return candidate.getTime();
+    return new Date(clockSelectedDate.getFullYear(), clockSelectedDate.getMonth(), clockSelectedDate.getDate(), h24, clockMinute, 0, 0).getTime();
   }
 
   function syncClockUI() {
@@ -4303,6 +4314,7 @@
 
   function confirmClockSelection() {
     const targetMs = computeTargetTimestamp();
+    if (targetMs <= Date.now()) { showIslandMessage('Choose a future date and time'); return; }
     if (clockContext === 'newTask') {
       pendingNewTaskReminderAt = targetMs;
       document.getElementById('newTaskReminderSub').textContent = `Scheduled · ${formatRelativeCountdown(targetMs)}`;
