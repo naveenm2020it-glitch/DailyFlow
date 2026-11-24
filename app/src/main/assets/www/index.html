@@ -2828,7 +2828,7 @@
       <!-- Monthly Habit Consistency (real calendar dates; saved daily completion) -->
       <div class="glass-card analytics-card">
         <div class="analytics-head">
-          <span class="analytics-title">Monthly Habit Consistency</span>
+          <span class="analytics-title" id="heatmapMonthTitle">Monthly Habit Consistency</span>
           <span class="analytics-badge green" id="heatmapTodayBadge">0% Today</span>
         </div>
         <div class="heatmap-weekdays" aria-hidden="true"><span class="heatmap-weekday">Mon</span><span class="heatmap-weekday">Tue</span><span class="heatmap-weekday">Wed</span><span class="heatmap-weekday">Thu</span><span class="heatmap-weekday">Fri</span><span class="heatmap-weekday">Sat</span><span class="heatmap-weekday">Sun</span></div>
@@ -4865,9 +4865,7 @@
     const mondayFirstOffset = (monthStart.getDay() + 6) % 7;
     selectedHeatmapIdx = today.getDate() - 1;
     const monthName = today.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-    document.querySelector('#view-progress .analytics-card .analytics-title')?.textContent;
-    const heatmapTitle = document.querySelector('#heatmapGrid')?.previousElementSibling;
-    if (heatmapTitle) heatmapTitle.textContent = `${monthName} · Habit Consistency`;
+    document.getElementById('heatmapMonthTitle').textContent = `${monthName} · Habit Consistency`;
     const grid = document.getElementById('heatmapGrid');
     const emptyCells = Array.from({ length: mondayFirstOffset }, () => '<div class="heatmap-empty" aria-hidden="true"></div>').join('');
     const dateCells = Array.from({ length: daysInMonth }, (_, idx) => {
